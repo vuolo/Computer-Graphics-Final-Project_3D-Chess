@@ -4,6 +4,9 @@ from OpenGL.GL import *
 from OpenGL.GLUT import *
 from chess_game import ChessGame, chess
 
+AI_OPPONENT_ENABLED = False  # Set to False to disable the AI opponent
+AI_OPPONENT_ELO = 1350  # elo_rating: Aim for an engine strength of the given Elo (from 0 to 4000)
+
 # Initialize the game
 game = ChessGame()
 # game.engine.set_fen_position("7k/5Q2/5K2/8/8/8/8/8 b - - 0 1")
@@ -98,6 +101,10 @@ def main():
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
     
     selected_square = None  # Keep track of the selected square
+    
+    if AI_OPPONENT_ENABLED:
+        game.set_ai_elo(AI_OPPONENT_ELO)
+    
     # Main loop
     while True:
         for event in pygame.event.get():
@@ -119,6 +126,11 @@ def main():
                 else:
                     selected_square = square_notation
                     print(f"Selected square: {selected_square}")
+                    
+        if AI_OPPONENT_ENABLED and game.board.turn == chess.BLACK:  # Assuming the AI plays as black
+            ai_move = game.ai_make_move()
+            if ai_move:
+                print(f"AI moved: {ai_move}")
                     
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         draw_board()

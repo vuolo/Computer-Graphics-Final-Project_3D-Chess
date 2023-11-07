@@ -10,6 +10,16 @@ class ChessGame:
                 "Minimum Thinking Time": 30
             })
         self.board = chess.Board()
+        
+    def set_ai_elo(self, elo):
+        self.engine.set_skill_level(elo)
+    
+    def ai_make_move(self):
+        best_move = self.engine.get_best_move()
+        if best_move:
+            self.make_move(best_move)
+            return best_move
+        return None
     
     def set_position(self, moves):
         # Update both the stockfish engine and python-chess board
