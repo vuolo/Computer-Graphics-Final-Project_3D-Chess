@@ -1,0 +1,82 @@
+# Textures packed with a simple packer
+#
+#
+newmtl Voldemort_eyelash
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.640000 0.640000 0.640000
+Ks 0.000000 0.000000 0.000000
+Ni 1.000000
+illum 1
+map_Kd lordvoldemort.png
+
+
+newmtl Voldemort_clothes
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.640000 0.640000 0.640000
+Ks 0.010000 0.010000 0.010000
+Ni 1.000000
+illum 2
+map_Kd lordvoldemort.png
+
+
+newmtl Voldemort_head
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.640000 0.640000 0.640000
+Ks 0.010000 0.010000 0.010000
+Ni 1.000000
+illum 2
+map_Kd lordvoldemort.png
+
+
+newmtl Voldemort_mouth
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.640000 0.640000 0.640000
+Ks 0.100000 0.100000 0.100000
+Ni 1.000000
+illum 2
+map_Kd lordvoldemort.png
+
+
+newmtl magic_wand
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.640000 0.640000 0.640000
+Ks 0.000000 0.000000 0.000000
+Ni 1.000000
+illum 1
+map_Kd lordvoldemort.png
+
+
+newmtl Voldemort_hands
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.640000 0.640000 0.640000
+Ks 0.010000 0.010000 0.010000
+Ni 1.000000
+illum 2
+map_Kd lordvoldemort.png
+
+
+newmtl Voldemort_eyes
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.640000 0.640000 0.640000
+Ks 0.500000 0.500000 0.500000
+Ni 1.000000
+illum 2
+map_Kd lordvoldemort.png
+
+
+newmtl Voldemort_lacrimal
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.640000 0.640000 0.640000
+Ks 0.000000 0.000000 0.000000
+Ni 1.000000
+illum 1
+map_Kd lordvoldemort.png
+
