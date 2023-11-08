@@ -5,7 +5,7 @@ from OpenGL.GLU import *
 from OpenGL.GLUT import *
 from chess_game import ChessGame, chess
 from menu import main_menu_interface, draw_main_menu_background
-from graphics import setup_board, draw_board, draw_pieces, pixel_to_board_coords, board_coords_to_notation, display_endgame_message, display_turn_indicator
+from graphics import setup_3d_chessboard, draw_3d_chessboard, draw_3d_pieces, setup_board, draw_board, draw_pieces, pixel_to_board_coords, board_coords_to_notation, display_endgame_message, display_turn_indicator
 
 def main():
     pygame.init()
@@ -19,7 +19,7 @@ def main():
     main_menu = main_menu_interface(main_menu_surface, game)
     
     pygame.display.set_mode(display, DOUBLEBUF | OPENGL)
-    setup_board()  # Sets up the orthographic projection and blending.
+    setup_3d_chessboard(display)
     selected_square = None  # Keep track of the user-selected square.
     highlight_squares = None # Displays highlight squares that the user can move to.
 
@@ -62,8 +62,10 @@ def main():
                         
             # Draw the board and pieces.
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-            draw_board(highlight_squares)
-            draw_pieces(game.get_2d_board_array())  # Use the 2D array for drawing pieces.
+            glLoadIdentity()
+            # TODO: Update the camera position here if needed.
+            draw_3d_chessboard()
+            draw_3d_pieces(game.get_2d_board_array())
             display_turn_indicator(game.board.turn)  # Display whose turn it is.
             
             # Display endgame message if the game is over.
