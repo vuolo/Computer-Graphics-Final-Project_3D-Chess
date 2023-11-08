@@ -12,11 +12,24 @@ game = ChessGame()
 # game.engine.set_fen_position("7k/5Q2/5K2/8/8/8/8/8 b - - 0 1")
 # game.board = chess.Board(game.engine.get_fen_position())
 
-def draw_board():
+def draw_board(highlight_squares):
     # Set the background color to light brown
     glClearColor(0.82, 0.71, 0.55, 1.0)  # RGBA for light brown
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-    
+
+    # Highlight the squares if any
+    if highlight_squares:
+        glColor3f(0.5, 0.76, 0.82)  # A light blue color for highlighting
+        glBegin(GL_QUADS)
+        for square in highlight_squares:
+            x, y = square
+            y = 7 - y
+            glVertex2fv((x, y))
+            glVertex2fv((x + 1, y))
+            glVertex2fv((x + 1, y + 1))
+            glVertex2fv((x, y + 1))
+        glEnd()
+
     # Draw the grid lines for the board
     glColor3f(0, 0, 0)  # Black lines for the board grid
     glBegin(GL_LINES)
@@ -101,6 +114,7 @@ def main():
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
     
     selected_square = None  # Keep track of the selected square
+    highlight_squares = None
     
     if AI_OPPONENT_ENABLED:
         game.set_ai_elo(AI_OPPONENT_ELO)
@@ -123,8 +137,12 @@ def main():
                     else:
                         print(f"Invalid move: {move}")
                     selected_square = None
+                    highlight_squares = None
                 else:
                     selected_square = square_notation
+                    # Get valid moves and convert to pixel coordinates
+                    valid_moves = game.get_valid_moves(selected_square)
+                    highlight_squares = [(file, 7 - rank) for file, rank in valid_moves]
                     print(f"Selected square: {selected_square}")
                     
         if AI_OPPONENT_ENABLED and game.board.turn == chess.BLACK:  # Assuming the AI plays as black
@@ -133,7 +151,8 @@ def main():
                 print(f"AI moved: {ai_move}")
                     
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        draw_board()
+        # draw_board()
+        draw_board(highlight_squares=highlight_squares)
         draw_pieces(game.get_2d_board_array())  # Use the 2D array for drawing pieces
         display_turn_indicator(game.board.turn)  # Display whose turn it is
         

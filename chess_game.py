@@ -59,6 +59,22 @@ class ChessGame:
              self.board.can_claim_draw():
             return "draw"
         return None  # If none of the above, the game is still ongoing
+    
+    def get_valid_moves(self, square):
+        '''Returns a list of valid moves for the piece on the given square.
+        The moves will be in the format of coordinate pairs.'''
+        
+        moves = []
+        try:
+            piece = self.board.piece_at(chess.parse_square(square))
+            if piece:  # If there is a piece on the given square
+                for move in self.board.legal_moves:
+                    if move.from_square == chess.parse_square(square):
+                        moves.append((chess.square_file(move.to_square), chess.square_rank(move.to_square)))
+        except ValueError:
+            # Handle the case where the input square is not valid
+            pass
+        return moves
 
     def __del__(self):
         ''' Properly terminate the Stockfish engine process when the ChessGame object is deleted '''
