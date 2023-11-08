@@ -8,20 +8,23 @@ def setup_board():
     glEnable(GL_BLEND)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-def draw_board():
+def draw_board(highlight_squares):
     # Set the background color to light brown
     glClearColor(0.82, 0.71, 0.55, 1.0)  # RGBA for light brown
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-    
-    # Draw the grid lines for the board
-    glColor3f(0, 0, 0)  # Black lines for the board grid
-    glBegin(GL_LINES)
-    for i in range(9):
-        glVertex2fv((i, 0))
-        glVertex2fv((i, 8))
-        glVertex2fv((0, i))
-        glVertex2fv((8, i))
-    glEnd()
+
+    # Highlight the squares (if any).
+    if highlight_squares:
+        glColor3f(0.5, 0.76, 0.82)  # A light blue color for highlighting.
+        glBegin(GL_QUADS)
+        for square in highlight_squares:
+            x, y = square
+            y = 7 - y
+            glVertex2fv((x, y))
+            glVertex2fv((x + 1, y))
+            glVertex2fv((x + 1, y + 1))
+            glVertex2fv((x, y + 1))
+        glEnd()
 
 def draw_text(text, x, y, color):
     """ Render text at the given position using Pygame and OpenGL. """
