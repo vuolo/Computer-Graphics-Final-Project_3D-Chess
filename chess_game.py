@@ -1,14 +1,15 @@
 import chess
 from stockfish import Stockfish
 import platform
+from constants import STOCKFISH_PATH_WINDOWS, STOCKFISH_PATH_LINUX
 
 class ChessGame:
     def __init__(self):
         # Automatically detect the OS and set the appropriate path for Stockfish
         if platform.system() == 'Windows':
-            stockfish_path = './stockfish/stockfish-windows-x86-64-avx2.exe'
+            stockfish_path = STOCKFISH_PATH_WINDOWS
         else:
-            stockfish_path = './stockfish/stockfish'
+            stockfish_path = STOCKFISH_PATH_LINUX
 
         self.engine = Stockfish(path=stockfish_path, parameters={
                 "Threads": 2, 
