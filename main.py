@@ -4,24 +4,27 @@ from OpenGL.GL import *
 from OpenGL.GLUT import *
 from constants import AI_OPPONENT_ENABLED, AI_OPPONENT_ELO
 from chess_game import ChessGame, chess
-from menu import main_menu_interface
+from menu import main_menu_interface, draw_main_menu_background
 from graphics import setup_board, draw_board, draw_pieces, pixel_to_board_coords, board_coords_to_notation, display_endgame_message, display_turn_indicator
-    
+
 def main():
     pygame.init()
     pygame.font.init()
+    pygame.display.set_caption("3D Chess")
     display = (800, 800)
-    surface = pygame.display.set_mode(display, DOUBLEBUF | OPENGL)
-
-    setup_board()  # Sets up the orthographic projection and blending.
     
     game = ChessGame()
-    main_menu = main_menu_interface(surface, game)
+    
+    main_menu_surface = pygame.display.set_mode(display)
+    main_menu = main_menu_interface(main_menu_surface, game)
+    
+    pygame.display.set_mode(display, DOUBLEBUF | OPENGL)
+    setup_board()  # Sets up the orthographic projection and blending.
     
     if AI_OPPONENT_ENABLED:
         game.set_ai_elo(AI_OPPONENT_ELO)
-    selected_square = None  # Keep track of the selected square.
-    highlight_squares = None
+    selected_square = None  # Keep track of the user-selected square.
+    highlight_squares = None # Displays highlight squares that the user can move to.
 
     # Main Loop.
     running = True
@@ -31,14 +34,8 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
                 break
-        
-        current_menu = main_menu.get_current()
 
-        if main_menu.is_enabled():
-            # Draw the menu.
-            main_menu.draw(surface)
-            main_menu.update(events)
-        else:
+        if not main_menu.is_enabled():
             # Draw the current game.
             for event in events:
                 if event.type == pygame.MOUSEBUTTONDOWN:
@@ -66,11 +63,13 @@ def main():
                 if ai_move:
                     print(f"AI moved: {ai_move}")
                         
+            # Draw the board and pieces.
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
             draw_board(highlight_squares)
             draw_pieces(game.get_2d_board_array())  # Use the 2D array for drawing pieces.
             display_turn_indicator(game.board.turn)  # Display whose turn it is.
             
+            # Display endgame message if the game is over.
             game_result = game.get_game_result()
             if game_result:
                 display_endgame_message(game_result)

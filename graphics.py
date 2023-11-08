@@ -8,7 +8,7 @@ def setup_board():
     glEnable(GL_BLEND)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-def draw_board(highlight_squares):
+def draw_board(highlight_squares=None):
     # Set the background color to light brown
     glClearColor(0.82, 0.71, 0.55, 1.0)  # RGBA for light brown
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
