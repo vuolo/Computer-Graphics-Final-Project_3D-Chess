@@ -21,7 +21,9 @@ def main():
     if AI_OPPONENT_ENABLED:
         game.set_ai_elo(AI_OPPONENT_ELO)
     selected_square = None  # Keep track of the selected square.
+    highlight_squares = None
 
+    # Main Loop.
     running = True
     while running:
         events = pygame.event.get()
@@ -50,8 +52,12 @@ def main():
                         else:
                             print(f"Invalid move: {move}")
                         selected_square = None
+                        highlight_squares = None
                     else:
                         selected_square = square_notation
+                        # Get valid moves and convert to pixel coordinates
+                        valid_moves = game.get_valid_moves(selected_square)
+                        highlight_squares = [(file, 7 - rank) for file, rank in valid_moves]
                         print(f"Selected square: {selected_square}")
                         
             if AI_OPPONENT_ENABLED and game.board.turn == chess.BLACK:  # Assuming the AI plays as black.
@@ -60,7 +66,7 @@ def main():
                     print(f"AI moved: {ai_move}")
                         
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-            draw_board()
+            draw_board(highlight_squares)
             draw_pieces(game.get_2d_board_array())  # Use the 2D array for drawing pieces.
             display_turn_indicator(game.board.turn)  # Display whose turn it is.
             
