@@ -1,6 +1,7 @@
 import pygame
 from pygame.locals import *
 from OpenGL.GL import *
+from OpenGL.GLU import *
 from OpenGL.GLUT import *
 from chess_game import ChessGame, chess
 from menu import main_menu_interface, draw_main_menu_background
