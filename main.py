@@ -2,7 +2,6 @@ import pygame
 from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GLUT import *
-from constants import AI_OPPONENT_ENABLED, AI_OPPONENT_ELO
 from chess_game import ChessGame, chess
 from menu import main_menu_interface, draw_main_menu_background
 from graphics import setup_board, draw_board, draw_pieces, pixel_to_board_coords, board_coords_to_notation, display_endgame_message, display_turn_indicator
@@ -14,17 +13,14 @@ def main():
     display = (800, 800)
     
     game = ChessGame()
-    
-    main_menu_surface = pygame.display.set_mode(display)
-    main_menu = main_menu_interface(main_menu_surface, game)
+    selected_square = None  # Keep track of the user-selected square.
+    highlight_squares = None # Displays highlight squares that the user can move to.
     
     pygame.display.set_mode(display, DOUBLEBUF | OPENGL)
     setup_board()  # Sets up the orthographic projection and blending.
     
-    if AI_OPPONENT_ENABLED:
-        game.set_ai_elo(AI_OPPONENT_ELO)
-    selected_square = None  # Keep track of the user-selected square.
-    highlight_squares = None # Displays highlight squares that the user can move to.
+    main_menu_surface = pygame.display.set_mode(display)
+    main_menu = main_menu_interface(main_menu_surface, game)
 
     # Main Loop.
     running = True
@@ -58,7 +54,7 @@ def main():
                         highlight_squares = [(file, 7 - rank) for file, rank in valid_moves]
                         print(f"Selected square: {selected_square}")
                         
-            if AI_OPPONENT_ENABLED and game.board.turn == chess.BLACK:  # Assuming the AI plays as black.
+            if game.ai_opponent_enabled and game.board.turn == chess.BLACK:  # Assuming the AI plays as black.
                 ai_move = game.ai_make_move()
                 if ai_move:
                     print(f"AI moved: {ai_move}")

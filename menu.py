@@ -13,8 +13,8 @@ def main_menu_interface(surface, game):
     )
 
     # Add main menu buttons.
-    main_menu.add.button('Play', start_the_game, main_menu, game)
-    main_menu.add.button('Settings', open_settings_menu, surface, game)
+    main_menu.add.button('Play', lambda: start_the_game(main_menu, game))
+    main_menu.add.button('Settings', lambda: open_settings_menu(surface, game))
     main_menu.add.button('Quit', pygame_menu.events.EXIT)
     # TODO: add a "credits" button & page to show the names of the developers and any resources used.
     

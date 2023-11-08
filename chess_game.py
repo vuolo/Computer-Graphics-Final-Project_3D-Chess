@@ -1,7 +1,7 @@
 import chess
 from stockfish import Stockfish
 import platform
-from constants import STOCKFISH_PATH_WINDOWS, STOCKFISH_PATH_LINUX
+from constants import STOCKFISH_PATH_WINDOWS, STOCKFISH_PATH_LINUX, AI_OPPONENT_DEFAULT_ENABLED, AI_OPPONENT_DEFAULT_ELO
 
 class ChessGame:
     def __init__(self):
@@ -11,14 +11,28 @@ class ChessGame:
         else:
             stockfish_path = STOCKFISH_PATH_LINUX
 
+        # Initialize the Stockfish engine and python-chess board
         self.engine = Stockfish(path=stockfish_path, parameters={
                 "Threads": 2, 
                 "Minimum Thinking Time": 30
             })
         self.board = chess.Board()
         
+        # AI opponent settings
+        self.ai_opponent_enabled = AI_OPPONENT_DEFAULT_ENABLED
+        self.engine.set_skill_level(AI_OPPONENT_DEFAULT_ELO)
+        
     def set_ai_elo(self, elo):
         self.engine.set_skill_level(elo)
+        
+    def get_ai_elo(self):
+        return self.engine.get_parameters()["Skill Level"]
+    
+    def set_ai_opponent_enabled(self, enabled):
+        self.ai_opponent_enabled = enabled
+        
+    def get_ai_opponent_enabled(self):
+        return self.ai_opponent_enabled
     
     def ai_make_move(self):
         best_move = self.engine.get_best_move()
