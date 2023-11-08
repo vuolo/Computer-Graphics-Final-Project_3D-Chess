@@ -11,12 +11,12 @@ def main():
     pygame.init()
     pygame.font.init()
     display = (800, 800)
-    screen = pygame.display.set_mode(display, DOUBLEBUF | OPENGL)
+    surface = pygame.display.set_mode(display, DOUBLEBUF | OPENGL)
 
     setup_board()  # Sets up the orthographic projection and blending.
     
     game = ChessGame()
-    main_menu = main_menu_interface(screen, game)
+    main_menu = main_menu_interface(surface, game)
     
     if AI_OPPONENT_ENABLED:
         game.set_ai_elo(AI_OPPONENT_ELO)
@@ -31,11 +31,13 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
                 break
+        
+        current_menu = main_menu.get_current()
 
         if main_menu.is_enabled():
             # Draw the menu.
+            main_menu.draw(surface)
             main_menu.update(events)
-            main_menu.draw(screen)
         else:
             # Draw the current game.
             for event in events:
