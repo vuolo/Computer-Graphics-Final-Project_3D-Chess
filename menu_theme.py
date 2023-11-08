@@ -9,7 +9,6 @@ theme_extension = {
     
     # Menubar/Title
     'title_background_color': (239, 231, 211, math.floor(255 * (1 - 0.2))), # 20% transparent.
-    'title_floating': True,
     'title_font': pygame_menu.font.FONT_8BIT,
     'title_font_color': (0, 0, 0),
     'title_font_size': 64,

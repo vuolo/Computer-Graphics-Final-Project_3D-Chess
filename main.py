@@ -13,14 +13,14 @@ def main():
     display = (800, 800)
     
     game = ChessGame()
-    selected_square = None  # Keep track of the user-selected square.
-    highlight_squares = None # Displays highlight squares that the user can move to.
-    
-    pygame.display.set_mode(display, DOUBLEBUF | OPENGL)
-    setup_board()  # Sets up the orthographic projection and blending.
     
     main_menu_surface = pygame.display.set_mode(display)
     main_menu = main_menu_interface(main_menu_surface, game)
+    
+    pygame.display.set_mode(display, DOUBLEBUF | OPENGL)
+    setup_board()  # Sets up the orthographic projection and blending.
+    selected_square = None  # Keep track of the user-selected square.
+    highlight_squares = None # Displays highlight squares that the user can move to.
 
     # Main Loop.
     running = True
