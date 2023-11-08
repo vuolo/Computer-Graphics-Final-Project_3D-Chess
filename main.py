@@ -34,7 +34,6 @@ def main():
 
         if main_menu.is_enabled():
             # Draw the menu.
-            screen.fill((0, 0, 0))
             main_menu.update(events)
             main_menu.draw(screen)
         else:
