@@ -11,21 +11,25 @@ from graphics.graphics_2d import pixel_to_board_coords, board_coords_to_notation
 
 # Global variables.
 game: Optional['ChessGame'] = None
-selected_square = None  # Keep track of the user-selected square.
-highlight_squares = None # Displays highlight squares that the user can move to.
+clock: Optional['pygame.time.Clock'] = None
+selected_square: Optional[str] = None  # Keep track of the user-selected square.
+highlight_squares: Optional[list[tuple[int, int]]] = None # Displays highlighted squares that the user can move to.
 
 def gameplay_setup():
-    global game
+    global game, clock
     game = ChessGame()
     
     # Initialize pygame.
     pygame.init()
     pygame.font.init()
     pygame.display.set_caption("3D Chess")
+    clock = pygame.time.Clock()
     
     return game
 
 def pre_draw_gameloop():
+    global game, clock, selected_square, highlight_squares
+    clock.tick(100)
     events = pygame.event.get()
     for event in events:
         if event.type == pygame.QUIT:
@@ -58,13 +62,14 @@ def pre_draw_gameloop():
             if ai_move:
                 print(f"AI moved: {ai_move}")
 
-def post_draw_gameloop(screen):
+def post_draw_gameloop():
     # Display endgame message if the game is over.
+    global game
     game_result = game.get_game_result()
-    if game_result:
-        display_endgame_message(screen, game_result)
-    else:
-        display_turn_indicator(screen, game.board.turn)  # Display whose turn it is if the game is still ongoing.
+    # TODO: Fix text render whilst using 3d graphics. (pyOpenGL)
+    # if game_result: display_endgame_message(game_result)
+    # else: display_turn_indicator(game.board.turn)  # Display whose turn it is if the game is still ongoing.
 
+    # Draw everything to the screen.
     pygame.display.flip()
     pygame.time.wait(10)

@@ -27,6 +27,7 @@ far_plane = 10
 
 # Global variables.
 game: Optional['ChessGame'] = None
+skybox: Optional[dict] = None
 
 def setup_3d_graphics(new_game):
     global game
@@ -56,16 +57,19 @@ def setup_3d_graphics(new_game):
     return screen
     
 
-def graphics_draw():
+def draw_graphics():
+    global game
+    
+    # Prepare the 3D scene.
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-    # Draw the board and pieces.
+    # Draw the 3D scene.
     draw_3d_chessboard()
-    draw_3d_pieces(game)
-            
+    draw_3d_pieces()
     draw_skybox()
 
-def graphics_cleanup():
+def cleanup_graphics():
+    global skybox
     # TODO: cleanup
     # glDeleteVertexArrays(NUM_OBJECTS + 1, np.append(vaos, skybox["vao"]))
     # glDeleteBuffers(NUM_OBJECTS + 1, np.append(vbos, skybox["vbo"]))
@@ -110,7 +114,10 @@ def setup_skybox():
     glEnableVertexAttribArray(skybox["position_loc"])
     skybox["shaderProgram"]["cubeMapTex"] = 0
     
+    return skybox
+    
 def draw_3d_chessboard():
+    # TODO: Draw the chessboard using 3D models.
     pass
     # for x in range(8):
     #     for y in range(8):
@@ -123,23 +130,26 @@ def draw_3d_chessboard():
     #         glutSolidCube(1)  # Draw a 1x1x1 cube here
     #         glPopMatrix()
 
-def draw_3d_pieces(game):
+def draw_3d_pieces():
+    global game
     board_array = game.get_2d_board_array()
-    # This function will now need to draw 3D models instead of text
-    # TODO: Load your 3D piece models and draw them on the board.
-    pass  # TODO: Replace this with your model loading and rendering code
+    # This function will now need to draw 3D models instead of text.
+    # TODO: Load our 3D piece models and draw them on the board.
+    pass  # TODO: Replace this with our model loading and rendering code
 
 def get_ray_from_mouse(mouse_x, mouse_y):
     # This is a complex function that would get the ray from the mouse
     # position into the 3D world.
-    pass  # Replace this with your raycasting code
+    pass  # TODO: Replace this with our raycasting code
 
 def select_piece(ray):
     # Determine if the ray intersects with any chess pieces.
-    pass  # Replace this with your intersection code
+    pass  # TODO: Replace this with our intersection code
 
 def draw_skybox():
-    # Grab the values from the GUI.
+    global skybox
+    
+    # TODO: make these globals, and defined once since we use 1 single camera for the entire game.
     angleY = np.deg2rad(0)
     angleX = np.deg2rad(0)
     fov = 45
