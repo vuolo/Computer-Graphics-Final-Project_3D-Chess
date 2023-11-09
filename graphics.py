@@ -35,15 +35,16 @@ def graphics_setup(new_game):
     # Set up OpenGL context's major and minor version numbers.
     pygame.display.gl_set_attribute(GL_CONTEXT_MAJOR_VERSION, 3)
     pygame.display.gl_set_attribute(GL_CONTEXT_MINOR_VERSION, 3)
-    pygame.display.set_mode(WINDOW["display"], DOUBLEBUF | OPENGL)
     
     # MacOS Compatability: We need to request a core profile and the flag for forward compatibility must be set.
     # (Source: https://www.khronos.org/opengl/wiki/OpenGL_Context#Forward_compatibility:~:text=Recommendation%3A%20You%20should%20use%20the%20forward%20compatibility%20bit%20only%20if%20you%20need%20compatibility%20with%20MacOS.%20That%20API%20requires%20the%20forward%20compatibility%20bit%20to%20create%20any%20core%20profile%20context.)
-    if platform.system() == 'Linux':
+    if platform.system() != 'Windows':
         pygame.display.gl_set_attribute(
             pygame.GL_CONTEXT_PROFILE_MASK, pygame.GL_CONTEXT_PROFILE_CORE)
         pygame.display.gl_set_attribute(
             pygame.GL_CONTEXT_FORWARD_COMPATIBLE_FLAG, True)
+    
+    pygame.display.set_mode(WINDOW["display"], DOUBLEBUF | OPENGL)
     
     # Set the background color to a medium dark shade of cyan-blue: #4c6680
     glClearColor(0.3, 0.4, 0.5, 1.0)
