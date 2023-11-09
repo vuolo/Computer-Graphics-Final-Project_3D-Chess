@@ -1,5 +1,6 @@
 # Third-party imports.
 import pygame
+from pygame.locals import *
 
 # Local application imports.
 from constants import WINDOW

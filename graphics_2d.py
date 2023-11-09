@@ -24,6 +24,7 @@ def draw_board(highlight_squares=None):
         # Vertical lines
         glVertex2f(i, 0)
         glVertex2f(i, 8)
+        
         # Horizontal lines
         glVertex2f(0, i)
         glVertex2f(8, i)

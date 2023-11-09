@@ -3,14 +3,17 @@ from typing import Optional
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
+from pygame.locals import *
+import pygame
 import pyrr
 import numpy as np
 import chess
+import platform
 
 # Local application imports.
 import chess_game
 from constants import WINDOW, SKYBOX_PATH
-from graphics_2d import display_endgame_message, display_turn_indicator
+# from graphics_2d import display_turn_indicator
 from util.objLoaderV4 import ObjLoader
 from util.cubemap import load_cubemap_textures
 from util.shaderLoaderV3 import ShaderProgram
@@ -29,14 +32,22 @@ def graphics_setup(new_game):
     global game
     game = new_game
     
+    # Set up OpenGL context's major and minor version numbers.
+    pygame.display.set_mode(WINDOW["display"], DOUBLEBUF | OPENGL)
+    pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MAJOR_VERSION, 3)
+    pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MINOR_VERSION, 3)
+    
+    # MacOS Compatability: We need to request a core profile and the flag for forward compatibility must be set.
+    # (Source: https://www.khronos.org/opengl/wiki/OpenGL_Context#Forward_compatibility:~:text=Recommendation%3A%20You%20should%20use%20the%20forward%20compatibility%20bit%20only%20if%20you%20need%20compatibility%20with%20MacOS.%20That%20API%20requires%20the%20forward%20compatibility%20bit%20to%20create%20any%20core%20profile%20context.)
+    if platform.system() == 'Linux':
+        pygame.display.gl_set_attribute(
+            pygame.GL_CONTEXT_PROFILE_MASK, pygame.GL_CONTEXT_PROFILE_CORE)
+        pygame.display.gl_set_attribute(
+            pygame.GL_CONTEXT_FORWARD_COMPATIBLE_FLAG, True)
+    
     # Set the background color to a medium dark shade of cyan-blue: #4c6680
     glClearColor(0.3, 0.4, 0.5, 1.0)
     glEnable(GL_DEPTH_TEST)
-    
-    # For 2D drawing (e.g. text on screen/2D chessboard [for debugging])
-    glOrtho(0.0, 8, 0.0, 8, -1.0, 1.0)
-    glEnable(GL_BLEND)
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
     
     # TODO: More lighting setup can be added here.
     setup_skybox()
@@ -45,12 +56,9 @@ def graphics_setup(new_game):
 def graphics_draw():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-    glLoadIdentity() # Reset the current matrix to the identity matrix, clearing all previous transformations
-
     # Draw the board and pieces.
     draw_3d_chessboard()
     draw_3d_pieces(game)
-    display_turn_indicator(game.board.turn)  # Display whose turn it is.
             
     draw_skybox()
 

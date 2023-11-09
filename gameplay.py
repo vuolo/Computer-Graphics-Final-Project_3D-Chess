@@ -3,7 +3,6 @@ from typing import Optional
 from pygame.locals import *
 import pygame
 import chess
-import platform
 
 # Local application imports.
 from constants import WINDOW
@@ -19,21 +18,10 @@ def gameplay_setup():
     global game
     game = ChessGame()
     
-    # Initialize pygame and set up OpenGL context's major and minor version numbers.
+    # Initialize pygame.
     pygame.init()
     pygame.font.init()
     pygame.display.set_caption("3D Chess")
-    pygame.display.set_mode(WINDOW["display"], DOUBLEBUF | OPENGL)
-    pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MAJOR_VERSION, 3)
-    pygame.display.gl_set_attribute(pygame.GL_CONTEXT_MINOR_VERSION, 3)
-    
-    # MacOS Compatability: We need to request a core profile and the flag for forward compatibility must be set.
-    # (Source: https://www.khronos.org/opengl/wiki/OpenGL_Context#Forward_compatibility:~:text=Recommendation%3A%20You%20should%20use%20the%20forward%20compatibility%20bit%20only%20if%20you%20need%20compatibility%20with%20MacOS.%20That%20API%20requires%20the%20forward%20compatibility%20bit%20to%20create%20any%20core%20profile%20context.)
-    if platform.system() == 'Linux':
-        pygame.display.gl_set_attribute(
-            pygame.GL_CONTEXT_PROFILE_MASK, pygame.GL_CONTEXT_PROFILE_CORE)
-        pygame.display.gl_set_attribute(
-            pygame.GL_CONTEXT_FORWARD_COMPATIBLE_FLAG, True)
     
     return game
 
@@ -73,10 +61,11 @@ def pre_draw_gameloop():
 def post_draw_gameloop():
     # Display endgame message if the game is over.
     game_result = game.get_game_result()
-    if game_result:
-        display_endgame_message(game_result)
-    else:
-        display_turn_indicator(game.board.turn)  # Display whose turn it is if the game is still ongoing.
+    # TODO: make this work using pygames' text render functionality
+    # if game_result:
+    #     display_endgame_message(game_result)
+    # else:
+    #     display_turn_indicator(game.board.turn)  # Display whose turn it is if the game is still ongoing.
 
     pygame.display.flip()
     pygame.time.wait(10)

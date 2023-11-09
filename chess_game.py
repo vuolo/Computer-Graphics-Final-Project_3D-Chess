@@ -18,8 +18,8 @@ class ChessGame:
         self.engine = Stockfish(path=stockfish_path, parameters={
                 "Threads": 2, 
                 "Minimum Thinking Time": 30
-            })
-        self.board = chess.Board()
+            }) # `stockfish` library
+        self.board = chess.Board() # `python-chess` library
         
         # AI opponent settings
         self.ai_opponent_enabled = AI_OPPONENT_DEFAULT_ENABLED
