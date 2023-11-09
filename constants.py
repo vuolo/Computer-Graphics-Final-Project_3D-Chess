@@ -16,5 +16,5 @@ SKIP_MAIN_MENU = False
 MAIN_MENU_BACKGROUND_IMAGE = 'images/menu/3.png'
 SETTINGS_MENU_BACKGROUND_IMAGE = 'images/menu/4.png'
 
+CHESSBOARD_OBJECT_PATH = 'models/board.obj'
 SKYBOX_PATH = 'skybox/set_in_space'
-# TODO: Add other constants like colors, sizes, etc.
