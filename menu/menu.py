@@ -1,5 +1,6 @@
 # Third-party imports.
 import pygame_menu
+import pygame
 
 # Local application imports.
 from menu.menu_theme import menu_theme, draw_main_menu_background
@@ -17,6 +18,10 @@ def init_main_menu(surface, game):
         enabled=True
     )
 
+    pygame.mixer.music.load('./sounds/menu.mp3')
+    pygame.mixer.music.set_volume(0.5)  # Set the volume to 50%
+    pygame.mixer.music.play(-1)  # -1 means the music will loop indefinitely
+
     # Add main menu buttons.
     main_menu.add.button('Play', lambda: start_the_game(main_menu, game))
     main_menu.add.button('Settings', lambda: open_settings_menu(surface, game))
@@ -30,4 +35,6 @@ def init_main_menu(surface, game):
 
 def start_the_game(menu, game):
     menu.disable()
+    pygame.mixer.music.stop()  # Stop the music
+
     # game.start() # TODO: if necessary (e.g. if we wanted to add a timer / reset game functionality / etc.)

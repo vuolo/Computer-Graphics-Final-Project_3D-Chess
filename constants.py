@@ -1,4 +1,3 @@
-# Define the window and viewport positions and sizes.
 WINDOW = {
     "width": 800,
     "height": 800,
@@ -17,34 +16,16 @@ MAIN_MENU_BACKGROUND_IMAGE = 'images/menu/3.png'
 SETTINGS_MENU_BACKGROUND_IMAGE = 'images/menu/4.png'
 STORE_MENU_BACKGROUND_IMAGE = 'images/menu/1.png'
 
+PIECES = ["pawn", "rook", "knight", "bishop", "queen", "king"]
+PIECE_COLORS = ["white", "black"]
+PIECE_ABR_DICT = { piece: piece[0] if piece != "knight" else "n" for piece in PIECES }
+PIECE_ABR_DICT.update({ v: k for k, v in PIECE_ABR_DICT.items() })
+
+MODEL_TEMPLATE = { "obj": None, "texture": None, "vao": None, "vbo": None, "model_matrix": None }
 CHESSBOARD_OBJECT_PATH = 'models/board/board.obj'
 CHESSBOARD_TEXTURE_PATH = 'models/board/board.png'
-PIECE_OBJECT_PATHS = {
-    "pawn": 'models/pieces/pawn.obj',
-    "rook": 'models/pieces/rook.obj',
-    "knight": 'models/pieces/knight.obj',
-    "bishop": 'models/pieces/bishop.obj',
-    "queen": 'models/pieces/queen.obj',
-    "king": 'models/pieces/king.obj'
-}
-PIECE_TEXTURE_PATHS = {
-    "white": {
-        "pawn": 'models/pieces/textures/white/pawn.png',
-        "rook": 'models/pieces/textures/white/rook.png',
-        "knight": 'models/pieces/textures/white/knight.png',
-        "bishop": 'models/pieces/textures/white/bishop.png',
-        "queen": 'models/pieces/textures/white/queen.png',
-        "king": 'models/pieces/textures/white/king.png'
-    },
-    "black": {
-        "pawn": 'models/pieces/textures/black/pawn.png',
-        "rook": 'models/pieces/textures/black/rook.png',
-        "knight": 'models/pieces/textures/black/knight.png',
-        "bishop": 'models/pieces/textures/black/bishop.png',
-        "queen": 'models/pieces/textures/black/queen.png',
-        "king": 'models/pieces/textures/black/king.png'
-    }
-}       
+PIECE_OBJECT_PATHS = { piece: f'models/pieces/{piece}/{piece}.obj' for piece in PIECES }
+PIECE_TEXTURE_PATHS = { color: { piece: f'models/pieces/{piece}/{color}.png' for piece in PIECES } for color in PIECE_COLORS }
 SKYBOX_PATH = 'skybox/ugly'
 
 # Credits.

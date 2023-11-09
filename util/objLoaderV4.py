@@ -143,26 +143,49 @@ class ObjLoader:
 
 
 
+    # def compute_model_extent(self, positions):
+    #     '''
+    #     Compute the model extent (min, max, center, diameter)
+    #     :param positions:
+    #     :return:
+    #     '''
+    #     self.min = np.array([np.inf, np.inf, np.inf])
+    #     self.max = np.array([-np.inf, -np.inf, -np.inf])
+
+    #     for v in positions:
+    #         v = np.array(v)
+    #         self.min = np.minimum(self.min, v)
+    #         self.max = np.maximum(self.max, v)
+
+    #     self.dia = np.linalg.norm(self.max - self.min)
+    #     self.center = (self.min + self.max) / 2
+
+    #     self.min = self.min.astype('float32')
+    #     self.max = self.max.astype('float32')
+    #     self.center = self.center.astype('float32')
+    
+    
     def compute_model_extent(self, positions):
         '''
-        Compute the model extent (min, max, center, diameter)
-        :param positions:
-        :return:
+        Compute the model extent (min, max, center, diameter) considering only x and z components
+        :param positions: A list of positions, where each position is a list or array of [x, y, z]
+        :return: None
         '''
         self.min = np.array([np.inf, np.inf, np.inf])
         self.max = np.array([-np.inf, -np.inf, -np.inf])
 
         for v in positions:
-            v = np.array(v)
-            self.min = np.minimum(self.min, v)
-            self.max = np.maximum(self.max, v)
+            v_xz = np.array([v[0], v[2]])  # Consider only x and z components
+            self.min[::2] = np.minimum(self.min[::2], v_xz)  # Update min for x and z
+            self.max[::2] = np.maximum(self.max[::2], v_xz)  # Update max for x and z
 
-        self.dia = np.linalg.norm(self.max - self.min)
-        self.center = (self.min + self.max) / 2
+        self.dia = np.linalg.norm(self.max[::2] - self.min[::2])  # Compute diameter using only x and z
+        self.center = (self.min[::2] + self.max[::2]) / 2  # Compute center using only x and z
 
+        # Convert to float32
         self.min = self.min.astype('float32')
         self.max = self.max.astype('float32')
-        self.center = self.center.astype('float32')
+        self.center = np.array([self.center[0], 0.0, self.center[1]]).astype('float32')  # Construct center with y as 0.0
 
 
     def compute_properties_of_vertices(self):
