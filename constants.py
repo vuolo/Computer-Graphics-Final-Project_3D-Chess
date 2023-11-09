@@ -12,6 +12,7 @@ STOCKFISH_PATH_LINUX = './stockfish/stockfish' # MacOS/Linux
 AI_OPPONENT_DEFAULT_ENABLED = True
 AI_OPPONENT_DEFAULT_ELO = 900  # Make the AI aim for an engine strength of the given Elo (i.e. from 0 to 4000).
 
+SKIP_MAIN_MENU = False
 MAIN_MENU_BACKGROUND_IMAGE = 'images/menu/3.png'
 SETTINGS_MENU_BACKGROUND_IMAGE = 'images/menu/4.png'
 

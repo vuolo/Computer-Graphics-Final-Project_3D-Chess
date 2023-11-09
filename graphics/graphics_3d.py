@@ -11,9 +11,9 @@ import chess
 import platform
 
 # Local application imports.
-import chess_game
+from graphics.graphics_2d import setup_2d_graphics
+from game.chess_game import ChessGame
 from constants import WINDOW, SKYBOX_PATH
-# from graphics_2d import display_turn_indicator
 from util.objLoaderV4 import ObjLoader
 from util.cubemap import load_cubemap_textures
 from util.shaderLoaderV3 import ShaderProgram
@@ -26,9 +26,9 @@ near_plane = 0.1
 far_plane = 10
 
 # Global variables.
-game: Optional['chess_game.ChessGame'] = None
+game: Optional['ChessGame'] = None
 
-def graphics_setup(new_game):
+def setup_3d_graphics(new_game):
     global game
     game = new_game
     
@@ -44,7 +44,7 @@ def graphics_setup(new_game):
         pygame.display.gl_set_attribute(
             pygame.GL_CONTEXT_FORWARD_COMPATIBLE_FLAG, True)
     
-    pygame.display.set_mode(WINDOW["display"], DOUBLEBUF | OPENGL)
+    screen = pygame.display.set_mode(WINDOW["display"], DOUBLEBUF | OPENGL)
     
     # Set the background color to a medium dark shade of cyan-blue: #4c6680
     glClearColor(0.3, 0.4, 0.5, 1.0)
@@ -52,6 +52,8 @@ def graphics_setup(new_game):
     
     # TODO: More lighting setup can be added here.
     setup_skybox()
+    
+    return screen
     
 
 def graphics_draw():

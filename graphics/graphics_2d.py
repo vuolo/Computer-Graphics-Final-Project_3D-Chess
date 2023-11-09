@@ -5,7 +5,7 @@ from OpenGL.GLUT import *
 import pygame
 import chess
     
-def setup_board():
+def setup_2d_graphics():
     glOrtho(0.0, 8, 0.0, 8, -1.0, 1.0)
     glEnable(GL_BLEND)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
@@ -94,11 +94,17 @@ def pixel_to_board_coords(x, y):
 def board_coords_to_notation(x, y):
     return f"{chr(ord('a') + x)}{y + 1}"
 
-def display_endgame_message(result):
+def display_endgame_message(screen, result):
+    font = pygame.font.Font(None, 48)
     message = "Draw!" if result == "draw" else f"{result.capitalize()} wins!"
-    draw_text(message, 400, 400, (255, 0, 0, 255))  # Red color for the endgame message
-    
-def display_turn_indicator(turn):
+    text_surface = font.render(message, True, (255, 0, 0))  # Red color for the endgame message
+    text_rect = text_surface.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2))
+    screen.blit(text_surface, text_rect)
+
+def display_turn_indicator(screen, turn):
+    print("Displaying turn indicator")
+    font = pygame.font.Font(None, 32)
     indicator_text = "White's Turn" if turn == chess.WHITE else "Black's Turn"
-    # Choose a visible color for the text, like blue
-    draw_text(indicator_text, 400, 750, (0, 0, 255, 255))
+    text_surface = font.render(indicator_text, True, (0, 0, 255))  # Blue color for the turn indicator
+    text_rect = text_surface.get_rect(center=(screen.get_width() / 2, screen.get_height() - 50))
+    screen.blit(text_surface, text_rect)

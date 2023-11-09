@@ -6,8 +6,8 @@ import chess
 
 # Local application imports.
 from constants import WINDOW
-from chess_game import ChessGame
-from graphics_2d import pixel_to_board_coords, board_coords_to_notation, display_endgame_message, display_turn_indicator
+from game.chess_game import ChessGame
+from graphics.graphics_2d import pixel_to_board_coords, board_coords_to_notation, display_endgame_message, display_turn_indicator
 
 # Global variables.
 game: Optional['ChessGame'] = None
@@ -58,14 +58,13 @@ def pre_draw_gameloop():
             if ai_move:
                 print(f"AI moved: {ai_move}")
 
-def post_draw_gameloop():
+def post_draw_gameloop(screen):
     # Display endgame message if the game is over.
     game_result = game.get_game_result()
-    # TODO: make this work using pygames' text render functionality
-    # if game_result:
-    #     display_endgame_message(game_result)
-    # else:
-    #     display_turn_indicator(game.board.turn)  # Display whose turn it is if the game is still ongoing.
+    if game_result:
+        display_endgame_message(screen, game_result)
+    else:
+        display_turn_indicator(screen, game.board.turn)  # Display whose turn it is if the game is still ongoing.
 
     pygame.display.flip()
     pygame.time.wait(10)
