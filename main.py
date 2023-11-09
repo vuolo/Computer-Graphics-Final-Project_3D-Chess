@@ -1,5 +1,6 @@
 # Third-party imports.
 import pygame
+import sys
 from pygame.locals import *
 
 # Local application imports.
@@ -11,7 +12,8 @@ from menu.menu import init_main_menu
 def main():
     # Setup.
     game = gameplay_setup()
-    init_main_menu(pygame.display.set_mode(WINDOW["display"]), game)
+    if "-nomenu" not in sys.argv:
+        init_main_menu(pygame.display.set_mode(WINDOW["display"]), game)
     graphics_setup(game)
     
     # Main Loop.
