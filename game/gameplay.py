@@ -1,5 +1,5 @@
 # Third-party imports.
-from typing import Optional
+from typing import List, Tuple, Optional
 from pygame.locals import *
 import pygame
 import chess
@@ -13,7 +13,7 @@ from graphics.graphics_2d import pixel_to_board_coords, board_coords_to_notation
 game: Optional['ChessGame'] = None
 clock: Optional['pygame.time.Clock'] = None
 selected_square: Optional[str] = None  # Keep track of the user-selected square.
-highlight_squares: Optional[list[tuple[int, int]]] = None # Displays highlighted squares that the user can move to.
+highlight_squares: Optional[List[Tuple[int, int]]] = None # Displays highlighted squares that the user can move to.
 
 def gameplay_setup():
     global game, clock
