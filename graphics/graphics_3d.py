@@ -152,7 +152,7 @@ def draw_skybox():
     # TODO: make these globals, and defined once since we use 1 single camera for the entire game.
     angleY = np.deg2rad(0)
     angleX = np.deg2rad(0)
-    fov = 45
+    fov = 75
 
     # Create a 4x4 view matrix (to transform the scene from world space to camera (view) space).
     # • Rotate the camera position using the rotation matrix (we combine the rotation matrices around the X and Y axes to create a single rotation matrix).

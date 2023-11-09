@@ -8,20 +8,18 @@ from constants import STOCKFISH_PATH_WINDOWS, STOCKFISH_PATH_LINUX, AI_OPPONENT_
 
 class ChessGame:
     def __init__(self):
-        # Automatically detect the OS and set the appropriate path for Stockfish
-        if platform.system() == 'Windows':
-            stockfish_path = STOCKFISH_PATH_WINDOWS
-        else:
-            stockfish_path = STOCKFISH_PATH_LINUX
+        # Automatically detect the OS and set the appropriate path for Stockfish.
+        if platform.system() == 'Windows': stockfish_path = STOCKFISH_PATH_WINDOWS
+        else: stockfish_path = STOCKFISH_PATH_LINUX
 
-        # Initialize the Stockfish engine and python-chess board
+        # Initialize the Stockfish engine and python-chess board.
         self.engine = Stockfish(path=stockfish_path, parameters={
                 "Threads": 2, 
                 "Minimum Thinking Time": 30
-            }) # `stockfish` library
-        self.board = chess.Board() # `python-chess` library
+            }) # (using the `stockfish` library)
+        self.board = chess.Board() # (using the `python-chess` library)
         
-        # AI opponent settings
+        # AI opponent settings.
         self.ai_opponent_enabled = AI_OPPONENT_DEFAULT_ENABLED
         self.engine.set_skill_level(AI_OPPONENT_DEFAULT_ELO)
         
@@ -45,19 +43,20 @@ class ChessGame:
         return None
     
     def set_position(self, moves):
-        # Update both the stockfish engine and python-chess board
+        # Update both the `stockfish` engine and `python-chess` board.
         self.engine.set_position(moves)
         self.board = chess.Board()
-        for move in moves:
-            self.board.push(chess.Move.from_uci(move))
+        for move in moves: self.board.push(chess.Move.from_uci(move))
 
     def make_move(self, move):
-        if self.engine.is_move_correct(move):
-            self.engine.make_moves_from_current_position([move])
-            # Update the python-chess board
-            self.board.push(chess.Move.from_uci(move))
-            return True, move
-        return False, None
+        if not self.engine.is_move_correct(move): return False, None
+        
+        # Update both the `stockfish` engine and `python-chess` board.
+        self.engine.make_moves_from_current_position([move])
+        self.board.push(chess.Move.from_uci(move))
+        
+        return True, move
+        
 
     def get_board_visual(self):
         return self.engine.get_board_visual()
@@ -95,7 +94,7 @@ class ChessGame:
                     if move.from_square == chess.parse_square(square):
                         moves.append((chess.square_file(move.to_square), chess.square_rank(move.to_square)))
         except ValueError:
-            # Handle the case where the input square is not valid
+            # TODO: Handle the case where the input square is not valid
             pass
         return moves
 
