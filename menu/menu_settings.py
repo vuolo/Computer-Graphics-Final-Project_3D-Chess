@@ -40,7 +40,7 @@ def open_settings_menu(surface, game):
         default=ai_enabled,
         onchange=lambda enabled: toggle_ai(enabled, game)
     )
-    settings_menu.add.button('Return \t To \t Main \t Menu', settings_menu.disable)
+    settings_menu.add.button('Return To Main Menu'.replace(" ", " \t "), settings_menu.disable)
     
     settings_menu.mainloop(surface, bgfun=lambda: draw_main_menu_background(surface, menu_type='settings'))
     

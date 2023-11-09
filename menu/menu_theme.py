@@ -3,7 +3,7 @@ import math
 import pygame_menu
 
 # Local application imports.
-from constants import MAIN_MENU_BACKGROUND_IMAGE, SETTINGS_MENU_BACKGROUND_IMAGE
+from constants import MAIN_MENU_BACKGROUND_IMAGE, SETTINGS_MENU_BACKGROUND_IMAGE, STORE_MENU_BACKGROUND_IMAGE
 
 menu_theme = pygame_menu.themes.THEME_SOLARIZED.copy() # Copy a theme to build off of.
 theme_extension = {
@@ -27,12 +27,12 @@ theme_extension = {
 }
 main_menu_background_image = pygame_menu.BaseImage(MAIN_MENU_BACKGROUND_IMAGE)
 settings_menu_background_image = pygame_menu.BaseImage(SETTINGS_MENU_BACKGROUND_IMAGE)
+store_menu_background_image = pygame_menu.BaseImage(STORE_MENU_BACKGROUND_IMAGE)
 [setattr(menu_theme, attr, value) for attr, value in theme_extension.items()] # Apply the theme extension.
 
 def draw_main_menu_background(surface, menu_type='main'):
-    if menu_type == 'main':
-        main_menu_background_image.draw(surface)
-    elif menu_type == 'settings':
-        settings_menu_background_image.draw(surface)
+    if menu_type == 'main': main_menu_background_image.draw(surface)
+    elif menu_type == 'settings': settings_menu_background_image.draw(surface)
+    elif menu_type == 'store': store_menu_background_image.draw(surface)
         
     # TODO: Draw a 3D rotating chessboard with a skybox instead.

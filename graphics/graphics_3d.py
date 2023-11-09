@@ -13,33 +13,61 @@ import platform
 # Local application imports.
 from graphics.graphics_2d import setup_2d_graphics
 from game.chess_game import ChessGame
-from constants import WINDOW, CHESSBOARD_OBJECT_PATH, CHESSBOARD_TEXTURE_PATH, SKYBOX_PATH
+from constants import WINDOW, CHESSBOARD_OBJECT_PATH, CHESSBOARD_TEXTURE_PATH, SKYBOX_PATH, PIECE_OBJECT_PATHS, PIECE_TEXTURE_PATHS
 from util.objLoaderV4 import ObjLoader
 from util.cubemap import load_cubemap_textures, load_texture
 from util.shaderLoaderV3 import ShaderProgram
 
-# Define the camera parameters.
-eye = (0, 0, 2)  # 2 units away from the origin along the positive z-axis.
-target = (0, 0, 0)  # The camera is looking at the origin.
-up = (0, 1, 0)
-near_plane = 0.1
-far_plane = 10
-angleY = np.deg2rad(0)
-angleX = np.deg2rad(20)
-fov = 65
-
 # Global variables.
 game: Optional['ChessGame'] = None
 skybox: Optional[dict] = None
-chessboard_obj: Optional['ObjLoader'] = None
-chessboard_texture: Optional[dict] = {}
-chessboard_vao: Optional[int] = None
-chessboard_vbo: Optional[int] = None
-chessboard_shaderProgram: Optional['ShaderProgram'] = None
-chessboard_model_matrix: Optional[np.ndarray] = None
+
+# ~ Chessboard
+chessboard: Optional[dict] = {
+    "obj": None,
+    "texture": {},
+    "vao": None,
+    "vbo": None,
+    "shaderProgram": None,
+    "model_matrix": None,
+}
+
+# ~ Pieces
+pieces: Optional[dict] = {
+    "white": {
+        "king": {
+            "obj": None,
+            "model_matrix": None,
+            "texture": None,
+        },
+        "queen": None,
+        "rook": None,
+        "bishop": None,
+        "knight": None,
+        "pawn": None,
+    },
+    "black": {
+        "king": None,
+        "queen": None,
+        "rook": None,
+        "bishop": None,
+        "knight": None,
+        "pawn": None,
+    },
+}
+
+# ~ Camera
 view_matrix: Optional[np.ndarray] = None
 projection_matrix: Optional[np.ndarray] = None
 rotated_eye: Optional[np.ndarray] = None
+eye: np.ndarray = np.array([0, 0, 2])  # Make the camera "eye" 2 units away from the origin along the positive z-axis.
+target: np.ndarray = np.array([0, 0, 0])  # Make the camera look at (target) the origin.
+up: np.ndarray = np.array([0, 1, 0])
+near_plane: float = 0.1
+far_plane: float = 10
+angleY: float = np.deg2rad(0)
+angleX: float = np.deg2rad(20)
+fov: float = 65
 
 def setup_3d_graphics(new_game):
     global game
@@ -69,53 +97,53 @@ def setup_3d_graphics(new_game):
     return screen
 
 def setup_chessboard():
-    global chessboard_obj, chessboard_texture, chessboard_vao, chessboard_vbo, chessboard_shaderProgram, chessboard_model_matrix
-    chessboard_obj = ObjLoader(CHESSBOARD_OBJECT_PATH)
+    global chessboard
+    chessboard["obj"] = ObjLoader(CHESSBOARD_OBJECT_PATH)
     
     # Create a VAO and VBO for the object.
-    chessboard_vao = glGenVertexArrays(1)
-    chessboard_vbo = glGenBuffers(1)
+    chessboard["vao"] = glGenVertexArrays(1)
+    chessboard["vbo"] = glGenBuffers(1)
     
     # Upload the object's model data to the GPU.
-    glBindVertexArray(chessboard_vao)
-    glBindBuffer(GL_ARRAY_BUFFER, chessboard_vbo)
-    glBufferData(GL_ARRAY_BUFFER, chessboard_obj.vertices, GL_STATIC_DRAW)
+    glBindVertexArray(chessboard["vao"])
+    glBindBuffer(GL_ARRAY_BUFFER, chessboard["vbo"])
+    glBufferData(GL_ARRAY_BUFFER, chessboard["obj"].vertices, GL_STATIC_DRAW)
     
     # Create a new shader program (compiles the object's shaders).
-    chessboard_shaderProgram =ShaderProgram("shaders/obj/vert.glsl", "shaders/obj/frag.glsl")
+    chessboard["shaderProgram"] = ShaderProgram("shaders/obj/vert.glsl", "shaders/obj/frag.glsl")
     
     # Configure the vertex attributes for the object (position, normal, and uv).
     position_loc, normal_loc, uv_loc = 0, 1, 2
-    glVertexAttribPointer(position_loc, chessboard_obj.size_position, GL_FLOAT,
-                          GL_FALSE, chessboard_obj.stride, ctypes.c_void_p(chessboard_obj.offset_position))
-    glVertexAttribPointer(normal_loc, chessboard_obj.size_normal, GL_FLOAT,
-                          GL_FALSE, chessboard_obj.stride, ctypes.c_void_p(chessboard_obj.offset_normal))
-    glVertexAttribPointer(uv_loc, chessboard_obj.size_texture, GL_FLOAT,
-                          GL_FALSE, chessboard_obj.stride, ctypes.c_void_p(chessboard_obj.offset_texture))
+    glVertexAttribPointer(position_loc, chessboard["obj"].size_position, GL_FLOAT,
+                          GL_FALSE, chessboard["obj"].stride, ctypes.c_void_p(chessboard["obj"].offset_position))
+    glVertexAttribPointer(normal_loc, chessboard["obj"].size_normal, GL_FLOAT,
+                          GL_FALSE, chessboard["obj"].stride, ctypes.c_void_p(chessboard["obj"].offset_normal))
+    glVertexAttribPointer(uv_loc, chessboard["obj"].size_texture, GL_FLOAT,
+                          GL_FALSE, chessboard["obj"].stride, ctypes.c_void_p(chessboard["obj"].offset_texture))
     glEnableVertexAttribArray(position_loc)
     glEnableVertexAttribArray(normal_loc)
     glEnableVertexAttribArray(uv_loc)
     
     # Assign the texture units to the shader.
-    chessboard_shaderProgram["tex2D"] = 0
-    chessboard_shaderProgram["cubeMapTex"] = 1
+    chessboard["shaderProgram"]["tex2D"] = 0
+    chessboard["shaderProgram"]["cubeMapTex"] = 1
     
     # Create a 4x4 model matrix (to transform the object from model space to world space) for the object.
-    scale_factor = 2 / chessboard_obj.dia
-    translation_matrix = pyrr.matrix44.create_from_translation(-chessboard_obj.center)
+    scale_factor = 2 / chessboard["obj"].dia
+    translation_matrix = pyrr.matrix44.create_from_translation(-chessboard["obj"].center)
     scale_matrix = pyrr.matrix44.create_from_scale([scale_factor, scale_factor, scale_factor])
-    chessboard_model_matrix = pyrr.matrix44.multiply(translation_matrix, scale_matrix)
+    chessboard["model_matrix"] = pyrr.matrix44.multiply(translation_matrix, scale_matrix)
     
     # Load the object's texture.
-    chessboard_texture["texture_pixels"], chessboard_texture["texture_size"] = load_texture(CHESSBOARD_TEXTURE_PATH, flip=True)
-    chessboard_texture["texture_id"] = glGenTextures(1)
-    glBindTexture(GL_TEXTURE_2D, chessboard_texture["texture_id"])
+    chessboard["texture"]["texture_pixels"], chessboard["texture"]["texture_size"] = load_texture(CHESSBOARD_TEXTURE_PATH, flip=True)
+    chessboard["texture"]["texture_id"] = glGenTextures(1)
+    glBindTexture(GL_TEXTURE_2D, chessboard["texture"]["texture_id"])
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, chessboard_texture["texture_size"]["width"], chessboard_texture["texture_size"]["height"],
-                 0, GL_RGB, GL_UNSIGNED_BYTE, chessboard_texture["texture_pixels"])
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, chessboard["texture"]["texture_size"]["width"], chessboard["texture"]["texture_size"]["height"],
+                 0, GL_RGB, GL_UNSIGNED_BYTE, chessboard["texture"]["texture_pixels"])
 
 def draw_graphics():    
     # Prepare the 3D scene.
@@ -143,10 +171,10 @@ def update_graphics():
     
 
 def cleanup_graphics():
-    global skybox, chessboard_vao, chessboard_vbo, chessboard_shaderProgram
-    glDeleteVertexArrays(2, [chessboard_vao, skybox["vao"]])
-    glDeleteBuffers(2, [chessboard_vbo, skybox["vbo"]])
-    glDeleteProgram(chessboard_shaderProgram.shader)
+    global chessboard, skybox 
+    glDeleteVertexArrays(2, [chessboard["vao"], skybox["vao"]])
+    glDeleteBuffers(2, [chessboard["vbo"], skybox["vbo"]])
+    glDeleteProgram(chessboard["shaderProgram"].shader)
     glDeleteProgram(skybox["shaderProgram"].shader)
 
 def setup_skybox():
@@ -186,31 +214,108 @@ def setup_skybox():
     return skybox
     
 def draw_3d_chessboard():
-    global chessboard_obj, chessboard_texture, chessboard_vao, chessboard_shaderProgram, chessboard_model_matrix, view_matrix, projection_matrix, rotated_eye
+    global chessboard, view_matrix, projection_matrix, rotated_eye
     
     # Send each matrix (model, view, and projection) to the object's shader.
-    glUseProgram(chessboard_shaderProgram.shader)
-    chessboard_shaderProgram["model_matrix"] = chessboard_model_matrix
-    chessboard_shaderProgram["view_matrix"] = view_matrix
-    chessboard_shaderProgram["projection_matrix"] = projection_matrix
-    chessboard_shaderProgram["eye_pos"] = rotated_eye
+    glUseProgram(chessboard["shaderProgram"].shader)
+    chessboard["shaderProgram"]["model_matrix"] = chessboard["model_matrix"]
+    chessboard["shaderProgram"]["view_matrix"] = view_matrix
+    chessboard["shaderProgram"]["projection_matrix"] = projection_matrix
+    chessboard["shaderProgram"]["eye_pos"] = rotated_eye
     
     # Bind the object's texture.
     glActiveTexture(GL_TEXTURE0)
-    glBindTexture(GL_TEXTURE_2D, chessboard_texture["texture_id"])
+    glBindTexture(GL_TEXTURE_2D, chessboard["texture"]["texture_id"])
 
     # Bind the skybox texture (for environment mapping).
     glActiveTexture(GL_TEXTURE1)
     glBindTexture(GL_TEXTURE_CUBE_MAP, skybox["texture_id"])
 
     # Draw the object.
-    glBindVertexArray(chessboard_vao)
-    glDrawArrays(GL_TRIANGLES, 0, chessboard_obj.n_vertices)
+    glBindVertexArray(chessboard["vao"])
+    glDrawArrays(GL_TRIANGLES, 0, chessboard["obj"].n_vertices)
     
+
+def setup_pieces():
+    global pieces_obj, pieces_vao, pieces_vbo, pieces_shaderProgram, pieces_model_matrix, pieces_texture
+
+    # Initialize dictionaries to hold the piece objects and textures.
+    pieces_obj = {}
+    pieces_vao = {}
+    pieces_vbo = {}
+    pieces_shaderProgram = {}
+    pieces_model_matrix = {}
+    pieces_texture = {}
+
+    for piece_type in PIECE_OBJECT_PATHS:
+        # Load the piece model using ObjLoader.
+        pieces_obj[piece_type] = ObjLoader(PIECE_OBJECT_PATHS[piece_type])
+        
+        # Create a VAO and VBO for the piece.
+        pieces_vao[piece_type] = glGenVertexArrays(1)
+        pieces_vbo[piece_type] = glGenBuffers(1)
+        
+        # Upload the piece's model data to the GPU.
+        glBindVertexArray(pieces_vao[piece_type])
+        glBindBuffer(GL_ARRAY_BUFFER, pieces_vbo[piece_type])
+        glBufferData(GL_ARRAY_BUFFER, pieces_obj[piece_type].vertices, GL_STATIC_DRAW)
+        
+        # You can use the same shader program for all pieces if they share the same shaders.
+        # Otherwise, create a new shader program for each piece type.
+        # This example assumes all pieces use the same shaders.
+        if not pieces_shaderProgram:
+            pieces_shaderProgram[piece_type] = ShaderProgram("shaders/obj/vert.glsl", "shaders/obj/frag.glsl")
+        
+        # Configure the vertex attributes for the piece (position, normal, and uv).
+        position_loc, normal_loc, uv_loc = 0, 1, 2
+        glVertexAttribPointer(position_loc, pieces_obj[piece_type].size_position, GL_FLOAT,
+                              GL_FALSE, pieces_obj[piece_type].stride, ctypes.c_void_p(pieces_obj[piece_type].offset_position))
+        glVertexAttribPointer(normal_loc, pieces_obj[piece_type].size_normal, GL_FLOAT,
+                              GL_FALSE, pieces_obj[piece_type].stride, ctypes.c_void_p(pieces_obj[piece_type].offset_normal))
+        glVertexAttribPointer(uv_loc, pieces_obj[piece_type].size_texture, GL_FLOAT,
+                              GL_FALSE, pieces_obj[piece_type].stride, ctypes.c_void_p(pieces_obj[piece_type].offset_texture))
+        glEnableVertexAttribArray(position_loc)
+        glEnableVertexAttribArray(normal_loc)
+        glEnableVertexAttribArray(uv_loc)
+
+        # Load the textures for white and black pieces.
+        pieces_texture[piece_type] = {}
+        for color in PIECE_TEXTURE_PATHS:
+            texture_path = PIECE_TEXTURE_PATHS[color][piece_type]
+            texture_pixels, texture_size = load_texture(texture_path, flip=True)
+            texture_id = glGenTextures(1)
+
+            pieces_texture[piece_type][color] = {
+                "texture_pixels": texture_pixels,
+                "texture_size": texture_size,
+                "texture_id": texture_id
+            }
+
+            glBindTexture(GL_TEXTURE_2D, texture_id)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture_size["width"], texture_size["height"],
+                         0, GL_RGB, GL_UNSIGNED_BYTE, texture_pixels)
+
+        # Assign the texture units to the shader.
+        pieces_shaderProgram[piece_type]["tex2D"] = 0  # Assuming all pieces use texture unit 0 for their texture.
+
+        # Create a 4x4 model matrix for the piece.
+        # You can create different transformations for each piece type if needed.
+        # This example scales all pieces based on the first piece's bounding diameter.
+        scale_factor = 2 / pieces_obj[piece_type].dia
+        translation_matrix = pyrr.matrix44.create_from_translation(-pieces_obj[piece_type].center)
+        scale_matrix = pyrr.matrix44.create_from_scale([scale_factor, scale_factor, scale_factor])
+        pieces_model_matrix[piece_type] = pyrr.matrix44.multiply(translation_matrix, scale_matrix)
+
 
 def draw_3d_pieces():
     global game
     board_array = game.get_2d_board_array()
+
+
     # This function will now need to draw 3D models instead of text.
     # TODO: Load our 3D piece models and draw them on the board.
     pass  # TODO: Replace this with our model loading and rendering code
