@@ -8,6 +8,13 @@ def load_image(filename, format="RGB", flip=False):
     w, h = img.get_size()
     return img_data, w, h
 
+def load_texture(filename, texture_format="RGB", flip=False):
+    texture = pg.image.load(filename)
+    return pg.image.tobytes(texture, texture_format, flip), {
+        "width": texture.get_width(),
+        "height": texture.get_height()
+    }
+
 def load_cubemap_textures(filenames):
     texture_id = glGenTextures(1)
     glBindTexture(GL_TEXTURE_CUBE_MAP, texture_id)

@@ -2,8 +2,10 @@
 import pygame_menu
 
 # Local application imports.
-from menu.menu_settings import open_settings_menu
 from menu.menu_theme import menu_theme, draw_main_menu_background
+from menu.menu_settings import open_settings_menu
+from menu.menu_store import open_store_menu
+from menu.menu_credits import open_credits_menu
 
 def init_main_menu(surface, game):
     # Define the main menu interface.
@@ -18,8 +20,9 @@ def init_main_menu(surface, game):
     # Add main menu buttons.
     main_menu.add.button('Play', lambda: start_the_game(main_menu, game))
     main_menu.add.button('Settings', lambda: open_settings_menu(surface, game))
+    main_menu.add.button('Store', lambda: open_store_menu(surface, game))
+    main_menu.add.button('Credits', lambda: open_credits_menu(surface, game))
     main_menu.add.button('Quit', pygame_menu.events.EXIT)
-    # TODO: add a "credits" button & page to show the names of the developers and any resources used.
     
     main_menu.mainloop(surface, bgfun=lambda: draw_main_menu_background(surface))
 

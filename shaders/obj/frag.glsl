@@ -17,5 +17,7 @@ void main() {
     // Sample color from 2D texture and cube map.
     vec3 color_tex = texture(tex2D, fragUV).rgb, envColor = texture(cubeMapTex, R).rgb;
     
-    outColor = vec4(mix(color_tex, envColor, 0.2), 1.0);
+    // Mix the two colors.
+    //outColor = vec4(mix(color_tex, envColor, 0.2), 1.0);
+    outColor = vec4(color_tex, 1.0);
 }

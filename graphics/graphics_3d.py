@@ -13,9 +13,9 @@ import platform
 # Local application imports.
 from graphics.graphics_2d import setup_2d_graphics
 from game.chess_game import ChessGame
-from constants import WINDOW, CHESSBOARD_OBJECT_PATH, SKYBOX_PATH
+from constants import WINDOW, CHESSBOARD_OBJECT_PATH, CHESSBOARD_TEXTURE_PATH, SKYBOX_PATH
 from util.objLoaderV4 import ObjLoader
-from util.cubemap import load_cubemap_textures
+from util.cubemap import load_cubemap_textures, load_texture
 from util.shaderLoaderV3 import ShaderProgram
 
 # Define the camera parameters.
@@ -32,6 +32,7 @@ fov = 65
 game: Optional['ChessGame'] = None
 skybox: Optional[dict] = None
 chessboard_obj: Optional['ObjLoader'] = None
+chessboard_texture: Optional[dict] = {}
 chessboard_vao: Optional[int] = None
 chessboard_vbo: Optional[int] = None
 chessboard_shaderProgram: Optional['ShaderProgram'] = None
@@ -68,7 +69,7 @@ def setup_3d_graphics(new_game):
     return screen
 
 def setup_chessboard():
-    global chessboard_obj, chessboard_vao, chessboard_vbo, chessboard_shaderProgram, chessboard_model_matrix
+    global chessboard_obj, chessboard_texture, chessboard_vao, chessboard_vbo, chessboard_shaderProgram, chessboard_model_matrix
     chessboard_obj = ObjLoader(CHESSBOARD_OBJECT_PATH)
     
     # Create a VAO and VBO for the object.
@@ -105,21 +106,18 @@ def setup_chessboard():
     scale_matrix = pyrr.matrix44.create_from_scale([scale_factor, scale_factor, scale_factor])
     chessboard_model_matrix = pyrr.matrix44.multiply(translation_matrix, scale_matrix)
     
-    # # TODO: Load the object's texture.
-    # object_textures[i]["texture_pixels"], object_textures[i]["texture_size"] = load_texture(
-    #     f"objects/{OBJECT_TEXTURE_PATH}", flip=True)
-    # object_textures[i]["texture_id"] = glGenTextures(1)
-    # glBindTexture(GL_TEXTURE_2D, object_textures[i]["texture_id"])
-    # glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
-    # glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
-    # glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-    # glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-    # glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, object_textures[i]["texture_size"]["width"], object_textures[i]["texture_size"]["height"],
-    #              0, GL_RGB, GL_UNSIGNED_BYTE, object_textures[i]["texture_pixels"])
+    # Load the object's texture.
+    chessboard_texture["texture_pixels"], chessboard_texture["texture_size"] = load_texture(CHESSBOARD_TEXTURE_PATH, flip=True)
+    chessboard_texture["texture_id"] = glGenTextures(1)
+    glBindTexture(GL_TEXTURE_2D, chessboard_texture["texture_id"])
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, chessboard_texture["texture_size"]["width"], chessboard_texture["texture_size"]["height"],
+                 0, GL_RGB, GL_UNSIGNED_BYTE, chessboard_texture["texture_pixels"])
 
-def draw_graphics():
-    global game
-    
+def draw_graphics():    
     # Prepare the 3D scene.
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
@@ -145,14 +143,11 @@ def update_graphics():
     
 
 def cleanup_graphics():
-    global skybox
-    # TODO: cleanup
-    # glDeleteVertexArrays(NUM_OBJECTS + 1, np.append(vaos, skybox["vao"]))
-    # glDeleteBuffers(NUM_OBJECTS + 1, np.append(vbos, skybox["vbo"]))
-    # for shaderProgram in shaderPrograms:
-    #     glDeleteProgram(shaderProgram.shader)
-    # glDeleteProgram(skybox["shaderProgram"].shader)
-    pass
+    global skybox, chessboard_vao, chessboard_vbo, chessboard_shaderProgram
+    glDeleteVertexArrays(2, [chessboard_vao, skybox["vao"]])
+    glDeleteBuffers(2, [chessboard_vbo, skybox["vbo"]])
+    glDeleteProgram(chessboard_shaderProgram.shader)
+    glDeleteProgram(skybox["shaderProgram"].shader)
 
 def setup_skybox():
     # Load the skybox shader and texture.
@@ -163,11 +158,11 @@ def setup_skybox():
                                     f"{SKYBOX_PATH}/top.png", f"{SKYBOX_PATH}/bottom.png",
                                     f"{SKYBOX_PATH}/front.png", f"{SKYBOX_PATH}/back.png"]),
         "vertices": np.array([-1, -1,
-                            1, -1,
-                            1, 1,
-                            1, 1,
-                            -1, 1,
-                            -1, -1], dtype=np.float32),
+                               1, -1,
+                               1,  1,
+                               1,  1,
+                              -1,  1,
+                              -1, -1], dtype=np.float32),
         "size_position": 2,
         "offset_position": 0,
         "vao": glGenVertexArrays(1),
@@ -191,7 +186,7 @@ def setup_skybox():
     return skybox
     
 def draw_3d_chessboard():
-    global chessboard_obj, chessboard_vao, chessboard_shaderProgram, chessboard_model_matrix, view_matrix, projection_matrix, rotated_eye
+    global chessboard_obj, chessboard_texture, chessboard_vao, chessboard_shaderProgram, chessboard_model_matrix, view_matrix, projection_matrix, rotated_eye
     
     # Send each matrix (model, view, and projection) to the object's shader.
     glUseProgram(chessboard_shaderProgram.shader)
@@ -200,13 +195,13 @@ def draw_3d_chessboard():
     chessboard_shaderProgram["projection_matrix"] = projection_matrix
     chessboard_shaderProgram["eye_pos"] = rotated_eye
     
-    # # Bind the object's texture.
-    # glActiveTexture(GL_TEXTURE0)
-    # glBindTexture(GL_TEXTURE_2D, object_textures[i]["texture_id"])
+    # Bind the object's texture.
+    glActiveTexture(GL_TEXTURE0)
+    glBindTexture(GL_TEXTURE_2D, chessboard_texture["texture_id"])
 
     # Bind the skybox texture (for environment mapping).
-    # glActiveTexture(GL_TEXTURE1)
-    # glBindTexture(GL_TEXTURE_CUBE_MAP, skybox["texture_id"])
+    glActiveTexture(GL_TEXTURE1)
+    glBindTexture(GL_TEXTURE_CUBE_MAP, skybox["texture_id"])
 
     # Draw the object.
     glBindVertexArray(chessboard_vao)
