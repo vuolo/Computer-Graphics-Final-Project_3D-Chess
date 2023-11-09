@@ -1,6 +1,9 @@
+# Third-party imports.
 import chess
 from stockfish import Stockfish
 import platform
+
+# Local application imports.
 from constants import STOCKFISH_PATH_WINDOWS, STOCKFISH_PATH_LINUX, AI_OPPONENT_DEFAULT_ENABLED, AI_OPPONENT_DEFAULT_ELO
 
 class ChessGame:

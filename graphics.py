@@ -1,34 +1,119 @@
+# Third-party imports.
+from typing import Optional
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
-import pygame
+import pyrr
+import numpy as np
 import chess
 
-def setup_3d_chessboard(display):
+# Local application imports.
+import chess_game
+from constants import WINDOW, SKYBOX_PATH
+from graphics_2d import display_endgame_message, display_turn_indicator
+from util.objLoaderV4 import ObjLoader
+from util.cubemap import load_cubemap_textures
+from util.shaderLoaderV3 import ShaderProgram
+
+# Define the camera parameters.
+eye = (0, 0, 2)  # 2 units away from the origin along the positive z-axis.
+target = (0, 0, 0)  # The camera is looking at the origin.
+up = (0, 1, 0)
+near_plane = 0.1
+far_plane = 10
+
+# Global variables.
+game: Optional['chess_game.ChessGame'] = None
+
+def graphics_setup(new_game):
+    global game
+    game = new_game
+    
+    # Set the background color to a medium dark shade of cyan-blue: #4c6680
+    glClearColor(0.3, 0.4, 0.5, 1.0)
     glEnable(GL_DEPTH_TEST)
-    glMatrixMode(GL_PROJECTION)
-    gluPerspective(45, (display[0] / display[1]), 0.1, 50.0)
-    glMatrixMode(GL_MODELVIEW)
-    gluLookAt(8, 8, 8, 4, 0, 4, 0, 1, 0)
-    glEnable(GL_LIGHTING)
-    glEnable(GL_LIGHT0)
-    glLightfv(GL_LIGHT0, GL_POSITION, (4, 4, 4, 1))
+    
+    # For 2D drawing (e.g. text on screen/2D chessboard [for debugging])
+    glOrtho(0.0, 8, 0.0, 8, -1.0, 1.0)
+    glEnable(GL_BLEND)
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
     
     # TODO: More lighting setup can be added here.
+    setup_skybox()
+    
+
+def graphics_draw():
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
+    glLoadIdentity() # Reset the current matrix to the identity matrix, clearing all previous transformations
+
+    # Draw the board and pieces.
+    draw_3d_chessboard()
+    draw_3d_pieces(game)
+    display_turn_indicator(game.board.turn)  # Display whose turn it is.
+            
+    draw_skybox()
+
+def graphics_cleanup():
+    # TODO: cleanup
+    # glDeleteVertexArrays(NUM_OBJECTS + 1, np.append(vaos, skybox["vao"]))
+    # glDeleteBuffers(NUM_OBJECTS + 1, np.append(vbos, skybox["vbo"]))
+    # for shaderProgram in shaderPrograms:
+    #     glDeleteProgram(shaderProgram.shader)
+    # glDeleteProgram(skybox["shaderProgram"].shader)
+    pass
+
+def setup_skybox():
+    # Load the skybox shader and texture.
+    global skybox
+    skybox = {
+        "shaderProgram": ShaderProgram("shaders/skybox/vert.glsl", "shaders/skybox/frag.glsl"),
+        "texture_id": load_cubemap_textures([f"{SKYBOX_PATH}/right.png", f"{SKYBOX_PATH}/left.png",
+                                    f"{SKYBOX_PATH}/top.png", f"{SKYBOX_PATH}/bottom.png",
+                                    f"{SKYBOX_PATH}/front.png", f"{SKYBOX_PATH}/back.png"]),
+        "vertices": np.array([-1, -1,
+                            1, -1,
+                            1, 1,
+                            1, 1,
+                            -1, 1,
+                            -1, -1], dtype=np.float32),
+        "size_position": 2,
+        "offset_position": 0,
+        "vao": glGenVertexArrays(1),
+        "vbo": glGenBuffers(1),
+        "position_loc": 0,
+    }
+    skybox["stride"] = skybox["size_position"] * 4
+    skybox["n_vertices"] = len(skybox["vertices"]) // 2
+
+    glBindVertexArray(skybox["vao"])
+    glBindBuffer(GL_ARRAY_BUFFER, skybox["vbo"])
+    glBufferData(GL_ARRAY_BUFFER, skybox["vertices"], GL_STATIC_DRAW)
+
+    # Configure the vertex attributes for the skybox (position only).
+    glUseProgram(skybox["shaderProgram"].shader)
+    glBindAttribLocation(skybox["shaderProgram"].shader,
+                        skybox["position_loc"], "position")
+    glVertexAttribPointer(skybox["position_loc"], skybox["size_position"], GL_FLOAT,
+                        GL_FALSE, skybox["stride"], ctypes.c_void_p(skybox["offset_position"]))
+    glEnableVertexAttribArray(skybox["position_loc"])
+    skybox["shaderProgram"]["cubeMapTex"] = 0
     
 def draw_3d_chessboard():
-    for x in range(8):
-        for y in range(8):
-            glPushMatrix()
-            if (x + y) % 2 == 0:
-                glColor3f(1, 1, 1)  # White squares
-            else:
-                glColor3f(0, 0, 0)  # Black squares
-            glTranslatef(x, 0, y)
-            glutSolidCube(1)  # Draw a 1x1x1 cube here
-            glPopMatrix()
+    pass
+    # for x in range(8):
+    #     for y in range(8):
+    #         glPushMatrix()
+    #         if (x + y) % 2 == 0:
+    #             glColor3f(1, 1, 1)  # White squares
+    #         else:
+    #             glColor3f(0, 0, 0)  # Black squares
+    #         glTranslatef(x, 0, y)
+    #         glutSolidCube(1)  # Draw a 1x1x1 cube here
+    #         glPopMatrix()
 
-def draw_3d_pieces(board_array):
+def draw_3d_pieces(game):
+    board_array = game.get_2d_board_array()
     # This function will now need to draw 3D models instead of text
     # TODO: Load your 3D piece models and draw them on the board.
     pass  # TODO: Replace this with your model loading and rendering code
@@ -41,100 +126,39 @@ def get_ray_from_mouse(mouse_x, mouse_y):
 def select_piece(ray):
     # Determine if the ray intersects with any chess pieces.
     pass  # Replace this with your intersection code
+
+def draw_skybox():
+    # Grab the values from the GUI.
+    angleY = np.deg2rad(0)
+    angleX = np.deg2rad(0)
+    fov = 45
+
+    # Create a 4x4 view matrix (to transform the scene from world space to camera (view) space).
+    # • Rotate the camera position using the rotation matrix (we combine the rotation matrices around the X and Y axes to create a single rotation matrix).
+    rotationY_matrix = pyrr.matrix44.create_from_y_rotation(angleY)
+    rotationX_matrix = pyrr.matrix44.create_from_x_rotation(angleX)
+    rotation_matrix = pyrr.matrix44.multiply(
+        rotationY_matrix, rotationX_matrix)
+    rotated_eye = pyrr.matrix44.apply_to_vector(
+        rotation_matrix, eye)
+    view_matrix = pyrr.matrix44.create_look_at(rotated_eye, target, up)
     
-def setup_board():
-    glOrtho(0.0, 8, 0.0, 8, -1.0, 1.0)
-    glEnable(GL_BLEND)
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-
-def draw_board(highlight_squares=None):
-    # Set the background color to light brown
-    glClearColor(0.82, 0.71, 0.55, 1.0)  # RGBA for light brown
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-
-    # Set the color to black for the grid lines
-    glColor3f(0.0, 0.0, 0.0)  # RGB for black
-
-    # Draw the grid lines
-    glBegin(GL_LINES)
-    for i in range(9):  # There are 8 squares + 1 to close the grid
-        # Vertical lines
-        glVertex2f(i, 0)
-        glVertex2f(i, 8)
-        # Horizontal lines
-        glVertex2f(0, i)
-        glVertex2f(8, i)
-    glEnd()
-
-    # Highlight the squares (if any).
-    if highlight_squares:
-        glColor3f(0.5, 0.76, 0.82)  # A light blue color for highlighting.
-        glBegin(GL_QUADS)
-        for square in highlight_squares:
-            x, y = square
-            y = 7 - y  # Flip the y-coordinate since OpenGL's origin is at the bottom-left
-            glVertex2f(x, y)
-            glVertex2f(x + 1, y)
-            glVertex2f(x + 1, y + 1)
-            glVertex2f(x, y + 1)
-        glEnd()
-
-def draw_text(text, x, y, color):
-    """ Render text at the given position using Pygame and OpenGL. """
-    font_size = 48
-    font = pygame.font.Font(None, font_size)
-    text_surface = font.render(text, True, color)
-    text_width, text_height = text_surface.get_size()
-    text_data = pygame.image.tostring(text_surface, "RGBA", True)
-
-    # Calculate the position to center the text
-    centered_x = x - (text_width / 2) / 800 * 8
-    centered_y = y - (text_height / 2) / 800 * 8
-
-    glWindowPos2d(centered_x, centered_y)
-    glDrawPixels(text_width, text_height, GL_RGBA, GL_UNSIGNED_BYTE, text_data)
-
+    # Create a 4x4 projection matrix (to define the perspective projection).
+    projection_matrix = pyrr.matrix44.create_perspective_projection(
+        fov, WINDOW["aspect_ratio"], near_plane, far_plane)
     
-def draw_pieces(board_array):
-    """ Render pieces on the board using the 2D board array.
+    # Remove the translation component from the view matrix because we want the skybox to be static.
+    view_matrix_without_translation = view_matrix.copy()
+    view_matrix_without_translation[3][:3] = [0, 0, 0]
+    inverseViewProjection_matrix = pyrr.matrix44.inverse(
+        pyrr.matrix44.multiply(view_matrix_without_translation, projection_matrix))
     
-    `piece.value` is one of the following:
-        • WHITE_PAWN = "P"
-        • BLACK_PAWN = "p"
-        • WHITE_KNIGHT = "N"
-        • BLACK_KNIGHT = "n"
-        • WHITE_BISHOP = "B"
-        • BLACK_BISHOP = "b"
-        • WHITE_ROOK = "R"
-        • BLACK_ROOK = "r"
-        • WHITE_QUEEN = "Q"
-        • BLACK_QUEEN = "q"
-        • WHITE_KING = "K"
-        • BLACK_KING = "k"
-    """
-    square_size = 100
-    for row in range(8):
-        for col in range(8):
-            piece = board_array[row][col]
-            if piece:
-                piece_char = piece.value
-                # Determine the color of the text based on the piece's case
-                color = (0, 0, 0, 255) if piece_char.islower() else (255, 255, 255, 255)
-                x = (col + 0.5) * square_size  # Center in the square
-                y = (7 - row + 0.5) * square_size  # Center in the square
-                draw_text(piece_char, x, y, color)
-                
-def pixel_to_board_coords(x, y):
-    return x // 100, 7 - y // 100
-
-def board_coords_to_notation(x, y):
-    return f"{chr(ord('a') + x)}{y + 1}"
-
-def display_endgame_message(result):
-    message = "Draw!" if result == "draw" else f"{result.capitalize()} wins!"
-    draw_text(message, 400, 400, (255, 0, 0, 255))  # Red color for the endgame message
-    
-def display_turn_indicator(turn):
-    indicator_text = "White's Turn" if turn == chess.WHITE else "Black's Turn"
-    # Choose a visible color for the text, like blue
-    draw_text(indicator_text, 400, 750, (0, 0, 255, 255))
+    # Draw the skybox.
+    glDepthFunc(GL_LEQUAL)
+    glUseProgram(skybox["shaderProgram"].shader)
+    glActiveTexture(GL_TEXTURE0)
+    glBindTexture(GL_TEXTURE_CUBE_MAP, skybox["texture_id"])
+    skybox["shaderProgram"]["invViewProjectionMatrix"] = inverseViewProjection_matrix
+    glBindVertexArray(skybox["vao"])
+    glDrawArrays(GL_TRIANGLES, 0, skybox["n_vertices"])
+    glDepthFunc(GL_LESS)

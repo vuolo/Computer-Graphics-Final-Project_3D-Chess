@@ -1,8 +1,11 @@
+# Third-party imports.
 import pygame_menu
-from menu_theme import menu_theme, draw_main_menu_background
-from menu_settings import open_settings_menu
 
-def main_menu_interface(surface, game):
+# Local application imports.
+from menu.menu_settings import open_settings_menu
+from menu.menu_theme import menu_theme, draw_main_menu_background
+
+def init_main_menu(surface, game):
     # Define the main menu interface.
     main_menu = pygame_menu.Menu(
         title='3D Chess',

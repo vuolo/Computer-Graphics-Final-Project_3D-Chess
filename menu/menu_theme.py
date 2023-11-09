@@ -1,5 +1,8 @@
-import pygame_menu
+# Third-party imports.
 import math
+import pygame_menu
+
+# Local application imports.
 from constants import MAIN_MENU_BACKGROUND_IMAGE, SETTINGS_MENU_BACKGROUND_IMAGE
 
 menu_theme = pygame_menu.themes.THEME_SOLARIZED.copy() # Copy a theme to build off of.

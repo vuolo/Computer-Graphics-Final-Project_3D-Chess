@@ -1,5 +1,8 @@
+# Third-party imports.
 import pygame_menu
-from menu_theme import menu_theme, draw_main_menu_background
+
+# Local application imports.
+from menu.menu_theme import menu_theme, draw_main_menu_background
 
 def change_elo(difficulty_name, elo, game):
     # Change the Elo of the AI opponent.
