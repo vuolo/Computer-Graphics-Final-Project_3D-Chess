@@ -11,7 +11,7 @@ from graphics.graphics_3d import setup_3d_graphics, draw_graphics, cleanup_graph
 def main():
     # Setup.
     game = gameplay_setup()
-    if "-nomenu" not in sys.argv or SKIP_MAIN_MENU:
+    if "-nomenu" not in sys.argv and not SKIP_MAIN_MENU:
         init_main_menu(pygame.display.set_mode(WINDOW["display"]), game)
     setup_3d_graphics(game)
     

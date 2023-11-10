@@ -1,4 +1,5 @@
 # Third-party imports.
+import math
 from typing import Optional, Tuple
 from OpenGL.GL import *
 from OpenGL.GLU import *
@@ -13,7 +14,7 @@ import platform
 # Local application imports.
 from graphics.graphics_2d import setup_2d_graphics
 from game.chess_game import ChessGame
-from constants import WINDOW, PIECES, PIECE_ABR_DICT, PIECE_COLORS, MODEL_TEMPLATE, CHESSBOARD_OBJECT_PATH, CHESSBOARD_TEXTURE_PATH, SKYBOX_PATH, PIECE_OBJECT_PATHS, PIECE_TEXTURE_PATHS, CAMERA_MOUSE_DRAG_SENSITIVITY, CAMERA_DEFAULT_YAW, CAMERA_DEFAULT_PITCH, CAMERA_MIN_DISTANCE, CAMERA_MAX_DISTANCE, CAMERA_DEFAULT_ANIMATION_SPEED
+from constants import WINDOW, PIECES, PIECE_ABR_DICT, PIECE_COLORS, MODEL_TEMPLATE, CHESSBOARD_OBJECT_PATH, CHESSBOARD_TEXTURE_PATH, SKYBOX_PATH, PIECE_OBJECT_PATHS, PIECE_TEXTURE_PATHS, CAMERA_MOUSE_DRAG_SENSITIVITY, CAMERA_DEFAULT_YAW, CAMERA_DEFAULT_PITCH, CAMERA_MIN_DISTANCE, CAMERA_MAX_DISTANCE, CAMERA_DEFAULT_ANIMATION_SPEED, CAMERA_USE_INTRO_ANIMATION, MOUSE_POSITION_DELTA
 from util.animation import ease_in_out, build_intro_camera_animation_keyframes
 from util.objLoaderV4 import ObjLoader
 from util.cubemap import load_cubemap_textures, load_texture
@@ -39,6 +40,7 @@ fov = 75
 # (Mouse dragging - rotate around the board - uses yaw/pitch instead of angleX/angleY):
 is_dragging = False
 last_mouse_pos: Tuple[int, int] = (0, 0)
+first_mouse_pos: Tuple[int, int] = (0, 0)
 yaw: float = np.deg2rad(CAMERA_DEFAULT_YAW["white"])
 pitch: float = np.deg2rad(CAMERA_DEFAULT_PITCH)
 # (Mouse scrolling - zoom in/out - uses camera_distance to adjust the distance of the camera from the target):
@@ -50,7 +52,7 @@ target_pitch = pitch
 is_animating = False
 animation_speed = CAMERA_DEFAULT_ANIMATION_SPEED
 # (Intro camera animation):
-intro_animation_started = True
+intro_animation_started = CAMERA_USE_INTRO_ANIMATION
 intro_animation_time = 0
 intro_keyframes = build_intro_camera_animation_keyframes(yaw, pitch, camera_distance)["20"] # Change from range 1 to 23 for varying intro camera animations
 current_intro_keyframe = 0
@@ -299,7 +301,7 @@ def setup_pieces():
             glEnableVertexAttribArray(uv_loc)
             
             # Create a 4x4 model matrix (to transform the piece from model space to world space).
-            scale_factor = 2 / pieces[color][piece]["obj"].dia * 0.1075 # Scale the piece down to fit on the chessboard squares properly.
+            scale_factor = 2 / pieces[color][piece]["obj"].dia * 0.1 # Scale the piece down to fit on the chessboard squares properly.
             translation_matrix = pyrr.matrix44.create_from_translation(-pieces[color][piece]["obj"].center)
             scale_matrix = pyrr.matrix44.create_from_scale([scale_factor, scale_factor, scale_factor])
             pieces[color][piece]["model_matrix"] = pyrr.matrix44.multiply(translation_matrix, scale_matrix)
@@ -354,9 +356,21 @@ def draw_pieces():
                 piece_model = pieces[color][piece_type]
 
                 # Calculate the piece's model matrix based on its position on the board.
-                piece_position = np.array([col - 3.5, 0, row - 3.5])  # Center the piece on the square.
+                # piece_position = np.array([col - 3.5, 0, row - 3.5])  # Center the piece on the square.
+                offset_x, offset_z, square_size = 0, 0, 1.575
+                piece_position = np.array([
+                    (col - 3.5) * square_size + offset_x, 
+                    0, 
+                    (row - 3.5) * square_size + offset_z
+                ])
                 translation_matrix = pyrr.matrix44.create_from_translation(piece_position)
                 model_matrix = pyrr.matrix44.multiply(translation_matrix, piece_model["model_matrix"])
+                
+                # Apply additional rotation to the white pieces to face the center of the board.
+                if color == 'white':
+                    # Create and apply a rotation matrix to rotate the piece 180 degrees around the y-axis.
+                    rotation_matrix = pyrr.matrix44.create_from_y_rotation(np.radians(180))
+                    model_matrix = pyrr.matrix44.multiply(rotation_matrix, model_matrix)
 
                 # Send each matrix (model, view, and projection) to the piece's shader.
                 shaderProgram["model_matrix"] = model_matrix
@@ -433,20 +447,29 @@ def draw_skybox():
     glDepthFunc(GL_LESS)
     
 # ~ Mouse events
-def handle_mouse_events(events):
-    global is_dragging, last_mouse_pos, yaw, pitch, camera_distance
+def handle_mouse_events(events, on_click_callback):
+    global is_dragging, last_mouse_pos, first_mouse_pos, yaw, pitch, camera_distance
 
     for event in events:
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:  # (Left click)
                 is_dragging = True
                 last_mouse_pos = pygame.mouse.get_pos()
+                first_mouse_pos = last_mouse_pos
             elif event.button == 4:  # (Scroll up)
                 camera_distance = max(CAMERA_MIN_DISTANCE, camera_distance - 1.0)
             elif event.button == 5:  # (Scroll down)
                 camera_distance = min(CAMERA_MAX_DISTANCE, camera_distance + 1.0)
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1:  # (Left click - released)
+                current_mouse_pos = pygame.mouse.get_pos()
+                delta_x = current_mouse_pos[0] - first_mouse_pos[0]
+                delta_y = current_mouse_pos[1] - first_mouse_pos[1]
+                delta_maginitude = math.sqrt(delta_x**2 + delta_y**2)
+                if delta_maginitude < MOUSE_POSITION_DELTA:
+                    x, y = current_mouse_pos
+                    #on_click_callback(x, y)
+                    handle_ray_tracing(x, y)
                 is_dragging = False
         elif event.type == pygame.MOUSEMOTION:
             if is_dragging:
@@ -460,71 +483,75 @@ def handle_mouse_events(events):
                 pitch -= np.deg2rad(dy * CAMERA_MOUSE_DRAG_SENSITIVITY)
 
                 # Clamp pitch to prevent flipping.
-                pitch = max(min(pitch, np.deg2rad(89)), np.deg2rad(-89))
+                pitch = max(min(pitch, np.deg2rad(89)), np.deg2rad(-89))                
+
+def handle_ray_tracing(x, y):
+    ray = get_ray_from_mouse(x, y)
+    print(f"Ray: {ray}")
 
 # # ~ TODO: Mouse raycasting (for click detection)
-# def get_ray_from_mouse(mouse_x, mouse_y):
-#     # Convert mouse position to normalized device coordinates (NDC)
-#     ndc_x = (2.0 * mouse_x) / WINDOW["width"] - 1.0
-#     ndc_y = 1.0 - (2.0 * mouse_y) / WINDOW["height"]
-#     ndc = np.array([ndc_x, ndc_y, -1.0, 1.0])  # Set z to -1 for the near plane and w to 1
+def get_ray_from_mouse(mouse_x, mouse_y):
+    # Convert mouse position to normalized device coordinates (NDC)
+    ndc_x = (2.0 * mouse_x) / WINDOW["width"] - 1.0
+    ndc_y = 1.0 - (2.0 * mouse_y) / WINDOW["height"]
+    ndc = np.array([ndc_x, ndc_y, -1.0, 1.0])  # Set z to -1 for the near plane and w to 1
 
-#     # Transform NDC to homogeneous clip coordinates
-#     clip = np.array([ndc_x, ndc_y, -1.0, 1.0])
+    # Transform NDC to homogeneous clip coordinates
+    clip = np.array([ndc_x, ndc_y, -1.0, 1.0])
 
-#     # Transform clip coordinates to eye coordinates
-#     eye = np.linalg.inv(projection_matrix) @ clip
-#     eye = np.array([eye[0], eye[1], -1.0, 0.0])  # Set z to -1 and w to 0 for direction
+    # Transform clip coordinates to eye coordinates
+    eye = np.linalg.inv(projection_matrix) @ clip
+    eye = np.array([eye[0], eye[1], -1.0, 0.0])  # Set z to -1 and w to 0 for direction
 
-#     # Transform eye coordinates to world coordinates
-#     world = np.linalg.inv(view_matrix) @ eye
-#     world /= np.linalg.norm(world)
+    # Transform eye coordinates to world coordinates
+    world = np.linalg.inv(view_matrix) @ eye
+    world /= np.linalg.norm(world)
 
-#     # Ray origin is the camera position (eye)
-#     ray_origin = eye[:3]
+    # Ray origin is the camera position (eye)
+    ray_origin = eye[:3]
 
-#     # Ray direction is the normalized world coordinates
-#     ray_direction = world[:3]
+    # Ray direction is the normalized world coordinates
+    ray_direction = world[:3]
 
-#     return ray_origin, ray_direction
+    return ray_origin, ray_direction
 
-# def intersect_ray_with_plane(ray_origin, ray_direction, plane_origin, plane_normal):
-#     # Calculate intersection using ray-plane intersection formula
-#     denom = np.dot(ray_direction, plane_normal)
-#     if np.abs(denom) > 1e-6:
-#         p0l0 = plane_origin - ray_origin
-#         t = np.dot(p0l0, plane_normal) / denom
-#         if t >= 0:  # Check if the intersection is in the direction of the ray
-#             intersection = ray_origin + t * ray_direction
-#             # Logging to help debug
-#             print(f"Intersection T: {t}, Intersection Point: {intersection}")
-#             return intersection
-#     return None
+def intersect_ray_with_plane(ray_origin, ray_direction, plane_origin, plane_normal):
+    # Calculate intersection using ray-plane intersection formula
+    denom = np.dot(ray_direction, plane_normal)
+    if np.abs(denom) > 1e-6:
+        p0l0 = plane_origin - ray_origin
+        t = np.dot(p0l0, plane_normal) / denom
+        if t >= 0:  # Check if the intersection is in the direction of the ray
+            intersection = ray_origin + t * ray_direction
+            # Logging to help debug
+            print(f"Intersection T: {t}, Intersection Point: {intersection}")
+            return intersection
+    return None
 
-# def determine_square_from_intersection(intersection_point):
-#     # Assuming the chessboard is 8x8 units and centered at the origin
-#     chessboard_size = 0.75
-#     half_chessboard_size = chessboard_size / 2
+def determine_square_from_intersection(intersection_point):
+    # Assuming the chessboard is 8x8 units and centered at the origin
+    chessboard_size = 0.75
+    half_chessboard_size = chessboard_size / 2
 
-#     # Convert the intersection point to a local position relative to the chessboard center
-#     local_pos_x = (intersection_point[0] + half_chessboard_size) / chessboard_size * 8
-#     local_pos_z = (intersection_point[2] + half_chessboard_size) / chessboard_size * 8
+    # Convert the intersection point to a local position relative to the chessboard center
+    local_pos_x = (intersection_point[0] + half_chessboard_size) / chessboard_size * 8
+    local_pos_z = (intersection_point[2] + half_chessboard_size) / chessboard_size * 8
 
-#     # Normalize the local position to the range [0, 7]
-#     file_index = int(local_pos_x)
-#     rank_index = int(local_pos_z)
+    # Normalize the local position to the range [0, 7]
+    file_index = int(local_pos_x)
+    rank_index = int(local_pos_z)
 
-#     # Ensure the indices are within the bounds [0, 7]
-#     file_index = min(max(file_index, 0), 7)
-#     rank_index = min(max(rank_index, 0), 7)
+    # Ensure the indices are within the bounds [0, 7]
+    file_index = min(max(file_index, 0), 7)
+    rank_index = min(max(rank_index, 0), 7)
 
-#     # Convert the indices to chess notation
-#     file_letter = chr(ord('a') + file_index)
-#     rank_number = str(8 - rank_index)
+    # Convert the indices to chess notation
+    file_letter = chr(ord('a') + file_index)
+    rank_number = str(8 - rank_index)
 
-#     # Logging to help debug
-#     print(f"Local X: {local_pos_x}, Local Z: {local_pos_z}")
-#     print(f"File Index: {file_index}, Rank Index: {rank_index}")
-#     print(f"File Letter: {file_letter}, Rank Number: {rank_number}")
+    # Logging to help debug
+    print(f"Local X: {local_pos_x}, Local Z: {local_pos_z}")
+    print(f"File Index: {file_index}, Rank Index: {rank_index}")
+    print(f"File Letter: {file_letter}, Rank Number: {rank_number}")
     
-#     return file_letter + rank_number
+    return file_letter + rank_number
