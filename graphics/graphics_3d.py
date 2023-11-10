@@ -1,5 +1,5 @@
 # Third-party imports.
-from typing import Optional
+from typing import Optional, Tuple
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
@@ -31,13 +31,16 @@ projection_matrix: Optional[np.ndarray] = None
 rotated_eye: Optional[np.ndarray] = None
 eye: np.ndarray = np.array([0, 0, 2])  # Make the camera "eye" 2 units away from the origin along the positive z-axis.
 target: np.ndarray = np.array([0, 0, 0])  # Make the camera look at (target) the origin.
-up: np.ndarray = np.array([0, 1, 0])
+up: np.ndarray = np.array([0, 1, 0]) # Make the camera's "up" direction the positive y-axis.
 near_plane: float = 0.1
 far_plane: float = 10
-angleY: float = np.deg2rad(0)
-angleX: float = np.deg2rad(90)
+angleY: float = np.deg2rad(15)
+angleX: float = np.deg2rad(75)
 fov: float = 65
+is_dragging: bool = False
+last_mouse_pos: Tuple[int, int] = (0, 0)
 
+# ~ Main
 def setup_3d_graphics(new_game):
     global game, shaderProgram
     game = new_game
@@ -49,10 +52,8 @@ def setup_3d_graphics(new_game):
     # MacOS Compatability: We need to request a core profile and the flag for forward compatibility must be set.
     # (Source: https://www.khronos.org/opengl/wiki/OpenGL_Context#Forward_compatibility:~:text=Recommendation%3A%20You%20should%20use%20the%20forward%20compatibility%20bit%20only%20if%20you%20need%20compatibility%20with%20MacOS.%20That%20API%20requires%20the%20forward%20compatibility%20bit%20to%20create%20any%20core%20profile%20context.)
     if platform.system() != 'Windows':
-        pygame.display.gl_set_attribute(
-            pygame.GL_CONTEXT_PROFILE_MASK, pygame.GL_CONTEXT_PROFILE_CORE)
-        pygame.display.gl_set_attribute(
-            pygame.GL_CONTEXT_FORWARD_COMPATIBLE_FLAG, True)
+        pygame.display.gl_set_attribute(pygame.GL_CONTEXT_PROFILE_MASK, pygame.GL_CONTEXT_PROFILE_CORE)
+        pygame.display.gl_set_attribute(pygame.GL_CONTEXT_FORWARD_COMPATIBLE_FLAG, True)
     
     screen = pygame.display.set_mode(WINDOW["display"], DOUBLEBUF | OPENGL)
     
@@ -68,6 +69,7 @@ def setup_3d_graphics(new_game):
     
     return screen
 
+# ~ Graphics
 def draw_graphics():
     # Prepare the 3D scene.
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -92,7 +94,6 @@ def update_graphics():
     # Create a 4x4 projection matrix (to define the perspective projection).
     projection_matrix = pyrr.matrix44.create_perspective_projection(fov, WINDOW["aspect_ratio"], near_plane, far_plane)
     
-
 def cleanup_graphics():
     global chessboard, skybox 
     glDeleteVertexArrays(2, [chessboard["vao"], skybox["vao"]])
@@ -100,7 +101,7 @@ def cleanup_graphics():
     glDeleteProgram(shaderProgram.shader)
     glDeleteProgram(skybox["shaderProgram"].shader)
 
-# Setup functions.
+# ~ Shader setup
 def setup_generic_shaderProgram():
     global shaderProgram
     
@@ -111,6 +112,7 @@ def setup_generic_shaderProgram():
     shaderProgram["tex2D"] = 0
     shaderProgram["cubeMapTex"] = 1
 
+# ~ Chessboard
 def setup_chessboard():
     global chessboard
     chessboard["obj"] = ObjLoader(CHESSBOARD_OBJECT_PATH)
@@ -154,6 +156,29 @@ def setup_chessboard():
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, chessboard["texture"]["texture_size"]["width"], chessboard["texture"]["texture_size"]["height"],
                  0, GL_RGB, GL_UNSIGNED_BYTE, chessboard["texture"]["texture_pixels"])
 
+def draw_chessboard():
+    global chessboard, view_matrix, projection_matrix, rotated_eye, shaderProgram
+    
+    # Send each matrix (model, view, and projection) to the object's shader.
+    glUseProgram(shaderProgram.shader)
+    shaderProgram["model_matrix"] = chessboard["model_matrix"]
+    shaderProgram["view_matrix"] = view_matrix
+    shaderProgram["projection_matrix"] = projection_matrix
+    shaderProgram["eye_pos"] = rotated_eye
+    
+    # Bind the object's texture.
+    glActiveTexture(GL_TEXTURE0)
+    glBindTexture(GL_TEXTURE_2D, chessboard["texture"]["texture_id"])
+
+    # Bind the skybox texture (for environment mapping).
+    glActiveTexture(GL_TEXTURE1)
+    glBindTexture(GL_TEXTURE_CUBE_MAP, skybox["texture_id"])
+
+    # Draw the object.
+    glBindVertexArray(chessboard["vao"])
+    glDrawArrays(GL_TRIANGLES, 0, chessboard["obj"].n_vertices)
+
+# ~ Pieces
 def setup_pieces():
     global pieces
     for color in PIECE_COLORS:
@@ -196,67 +221,7 @@ def setup_pieces():
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, pieces[color][piece]["texture"]["texture_size"]["width"], pieces[color][piece]["texture"]["texture_size"]["height"],
                          0, GL_RGB, GL_UNSIGNED_BYTE, pieces[color][piece]["texture"]["texture_pixels"])
-
-def setup_skybox():
-    # Load the skybox shader and texture.
-    global skybox
-    skybox = {
-        "shaderProgram": ShaderProgram("shaders/skybox/vert.glsl", "shaders/skybox/frag.glsl"),
-        "texture_id": load_cubemap_textures([f"{SKYBOX_PATH}/right.png", f"{SKYBOX_PATH}/left.png",
-                                    f"{SKYBOX_PATH}/top.png", f"{SKYBOX_PATH}/bottom.png",
-                                    f"{SKYBOX_PATH}/front.png", f"{SKYBOX_PATH}/back.png"]),
-        "vertices": np.array([-1, -1,
-                               1, -1,
-                               1,  1,
-                               1,  1,
-                              -1,  1,
-                              -1, -1], dtype=np.float32),
-        "size_position": 2,
-        "offset_position": 0,
-        "vao": glGenVertexArrays(1),
-        "vbo": glGenBuffers(1),
-        "position_loc": 0,
-    }
-    skybox["stride"] = skybox["size_position"] * 4
-    skybox["n_vertices"] = len(skybox["vertices"]) // 2
-
-    # Upload the skybox's VAO data to the GPU.
-    glBindVertexArray(skybox["vao"])
-    glBindBuffer(GL_ARRAY_BUFFER, skybox["vbo"])
-    glBufferData(GL_ARRAY_BUFFER, skybox["vertices"], GL_STATIC_DRAW)
-
-    # Configure the vertex attributes for the skybox (position only).
-    glUseProgram(skybox["shaderProgram"].shader)
-    glBindAttribLocation(skybox["shaderProgram"].shader, skybox["position_loc"], "position")
-    glVertexAttribPointer(skybox["position_loc"], skybox["size_position"], GL_FLOAT, GL_FALSE, skybox["stride"], ctypes.c_void_p(skybox["offset_position"]))
-    glEnableVertexAttribArray(skybox["position_loc"])
-    skybox["shaderProgram"]["cubeMapTex"] = 0
-    
-    return skybox
-    
-# Draw functions.
-def draw_chessboard():
-    global chessboard, view_matrix, projection_matrix, rotated_eye, shaderProgram
-    
-    # Send each matrix (model, view, and projection) to the object's shader.
-    glUseProgram(shaderProgram.shader)
-    shaderProgram["model_matrix"] = chessboard["model_matrix"]
-    shaderProgram["view_matrix"] = view_matrix
-    shaderProgram["projection_matrix"] = projection_matrix
-    shaderProgram["eye_pos"] = rotated_eye
-    
-    # Bind the object's texture.
-    glActiveTexture(GL_TEXTURE0)
-    glBindTexture(GL_TEXTURE_2D, chessboard["texture"]["texture_id"])
-
-    # Bind the skybox texture (for environment mapping).
-    glActiveTexture(GL_TEXTURE1)
-    glBindTexture(GL_TEXTURE_CUBE_MAP, skybox["texture_id"])
-
-    # Draw the object.
-    glBindVertexArray(chessboard["vao"])
-    glDrawArrays(GL_TRIANGLES, 0, chessboard["obj"].n_vertices)
-    
+            
 def draw_pieces():
     # `board_array` is a 8x8 grid (2d array) of chess pieces.
     #  • Each element in the grid is either None (if there is no piece at that location) or a <Piece> object.
@@ -295,7 +260,7 @@ def draw_pieces():
                 piece_model = pieces[color][piece_type]
 
                 # Calculate the piece's model matrix based on its position on the board.
-                piece_position = np.array([col - 3.5, 0, -(row - 3.5)])  # Center the piece on the square.
+                piece_position = np.array([col - 3.5, 0, row - 3.5])  # Center the piece on the square.
                 translation_matrix = pyrr.matrix44.create_from_translation(piece_position)
                 model_matrix = pyrr.matrix44.multiply(translation_matrix, piece_model["model_matrix"])
 
@@ -317,6 +282,44 @@ def draw_pieces():
                 glBindVertexArray(piece_model["vao"])
                 glDrawArrays(GL_TRIANGLES, 0, piece_model["obj"].n_vertices)
 
+# ~ Skybox
+def setup_skybox():
+    # Load the skybox shader and texture.
+    global skybox
+    skybox = {
+        "shaderProgram": ShaderProgram("shaders/skybox/vert.glsl", "shaders/skybox/frag.glsl"),
+        "texture_id": load_cubemap_textures([f"{SKYBOX_PATH}/right.png", f"{SKYBOX_PATH}/left.png",
+                                    f"{SKYBOX_PATH}/top.png", f"{SKYBOX_PATH}/bottom.png",
+                                    f"{SKYBOX_PATH}/front.png", f"{SKYBOX_PATH}/back.png"]),
+        "vertices": np.array([-1, -1,
+                               1, -1,
+                               1,  1,
+                               1,  1,
+                              -1,  1,
+                              -1, -1], dtype=np.float32),
+        "size_position": 2,
+        "offset_position": 0,
+        "vao": glGenVertexArrays(1),
+        "vbo": glGenBuffers(1),
+        "position_loc": 0,
+    }
+    skybox["stride"] = skybox["size_position"] * 4
+    skybox["n_vertices"] = len(skybox["vertices"]) // 2
+
+    # Upload the skybox's VAO data to the GPU.
+    glBindVertexArray(skybox["vao"])
+    glBindBuffer(GL_ARRAY_BUFFER, skybox["vbo"])
+    glBufferData(GL_ARRAY_BUFFER, skybox["vertices"], GL_STATIC_DRAW)
+
+    # Configure the vertex attributes for the skybox (position only).
+    glUseProgram(skybox["shaderProgram"].shader)
+    glBindAttribLocation(skybox["shaderProgram"].shader, skybox["position_loc"], "position")
+    glVertexAttribPointer(skybox["position_loc"], skybox["size_position"], GL_FLOAT, GL_FALSE, skybox["stride"], ctypes.c_void_p(skybox["offset_position"]))
+    glEnableVertexAttribArray(skybox["position_loc"])
+    skybox["shaderProgram"]["cubeMapTex"] = 0
+    
+    return skybox
+
 def draw_skybox():
     global skybox, view_matrix, projection_matrix
     
@@ -334,13 +337,96 @@ def draw_skybox():
     glBindVertexArray(skybox["vao"])
     glDrawArrays(GL_TRIANGLES, 0, skybox["n_vertices"])
     glDepthFunc(GL_LESS)
+    
+# ~ Mouse events
+def handle_mouse_events(events):
+    global is_dragging, last_mouse_pos, angleX, angleY
 
-# TODO: implement player click detection...
-def get_ray_from_mouse(mouse_x, mouse_y):
-    # This is a complex function that would get the ray from the mouse
-    # position into the 3D world.
-    pass  # TODO: Replace this with our raycasting code
+    for event in events:
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:  # Left click
+                is_dragging = True
+                last_mouse_pos = pygame.mouse.get_pos()
+        elif event.type == pygame.MOUSEBUTTONUP:
+            if event.button == 1:  # Left click released
+                is_dragging = False
+        elif event.type == pygame.MOUSEMOTION:
+            if is_dragging:
+                current_mouse_pos = pygame.mouse.get_pos()
+                dx = current_mouse_pos[0] - last_mouse_pos[0]
+                dy = current_mouse_pos[1] - last_mouse_pos[1]
+                last_mouse_pos = current_mouse_pos
 
-def select_piece(ray):
-    # Determine if the ray intersects with any chess pieces.
-    pass  # TODO: Replace this with our intersection code
+                # Update angles based on mouse movement
+                angleY += np.deg2rad(dx * 0.1)  # Sensitivity factor of 0.1
+                angleX += np.deg2rad(dy * 0.1)  # Sensitivity factor of 0.1
+
+                # Clamp angleX to prevent flipping
+                angleX = max(min(angleX, np.deg2rad(89)), np.deg2rad(-89))
+
+# # ~ TODO: Mouse raycasting (for click detection)
+# def get_ray_from_mouse(mouse_x, mouse_y):
+#     # Convert mouse position to normalized device coordinates (NDC)
+#     ndc_x = (2.0 * mouse_x) / WINDOW["width"] - 1.0
+#     ndc_y = 1.0 - (2.0 * mouse_y) / WINDOW["height"]
+#     ndc = np.array([ndc_x, ndc_y, -1.0, 1.0])  # Set z to -1 for the near plane and w to 1
+
+#     # Transform NDC to homogeneous clip coordinates
+#     clip = np.array([ndc_x, ndc_y, -1.0, 1.0])
+
+#     # Transform clip coordinates to eye coordinates
+#     eye = np.linalg.inv(projection_matrix) @ clip
+#     eye = np.array([eye[0], eye[1], -1.0, 0.0])  # Set z to -1 and w to 0 for direction
+
+#     # Transform eye coordinates to world coordinates
+#     world = np.linalg.inv(view_matrix) @ eye
+#     world /= np.linalg.norm(world)
+
+#     # Ray origin is the camera position (eye)
+#     ray_origin = eye[:3]
+
+#     # Ray direction is the normalized world coordinates
+#     ray_direction = world[:3]
+
+#     return ray_origin, ray_direction
+
+# def intersect_ray_with_plane(ray_origin, ray_direction, plane_origin, plane_normal):
+#     # Calculate intersection using ray-plane intersection formula
+#     denom = np.dot(ray_direction, plane_normal)
+#     if np.abs(denom) > 1e-6:
+#         p0l0 = plane_origin - ray_origin
+#         t = np.dot(p0l0, plane_normal) / denom
+#         if t >= 0:  # Check if the intersection is in the direction of the ray
+#             intersection = ray_origin + t * ray_direction
+#             # Logging to help debug
+#             print(f"Intersection T: {t}, Intersection Point: {intersection}")
+#             return intersection
+#     return None
+
+# def determine_square_from_intersection(intersection_point):
+#     # Assuming the chessboard is 8x8 units and centered at the origin
+#     chessboard_size = 0.75
+#     half_chessboard_size = chessboard_size / 2
+
+#     # Convert the intersection point to a local position relative to the chessboard center
+#     local_pos_x = (intersection_point[0] + half_chessboard_size) / chessboard_size * 8
+#     local_pos_z = (intersection_point[2] + half_chessboard_size) / chessboard_size * 8
+
+#     # Normalize the local position to the range [0, 7]
+#     file_index = int(local_pos_x)
+#     rank_index = int(local_pos_z)
+
+#     # Ensure the indices are within the bounds [0, 7]
+#     file_index = min(max(file_index, 0), 7)
+#     rank_index = min(max(rank_index, 0), 7)
+
+#     # Convert the indices to chess notation
+#     file_letter = chr(ord('a') + file_index)
+#     rank_number = str(8 - rank_index)
+
+#     # Logging to help debug
+#     print(f"Local X: {local_pos_x}, Local Z: {local_pos_z}")
+#     print(f"File Index: {file_index}, Rank Index: {rank_index}")
+#     print(f"File Letter: {file_letter}, Rank Number: {rank_number}")
+    
+#     return file_letter + rank_number
