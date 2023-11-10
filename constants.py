@@ -1,3 +1,4 @@
+# ~ Window
 WINDOW = {
     "width": 800,
     "height": 800,
@@ -5,22 +6,27 @@ WINDOW = {
 WINDOW.update({"aspect_ratio": WINDOW["width"] / WINDOW["height"]})
 WINDOW.update({"display": (WINDOW["width"], WINDOW["height"])})
 
+# ~ Stockfish
 STOCKFISH_PATH_WINDOWS = './stockfish/stockfish-windows-x86-64-avx2.exe'
 STOCKFISH_PATH_LINUX = './stockfish/stockfish' # MacOS/Linux
 
+# ~ AI opponent
 AI_OPPONENT_DEFAULT_ENABLED = False
 AI_OPPONENT_DEFAULT_ELO = 900  # Make the AI aim for an engine strength of the given Elo (i.e. from 0 to 4000).
 
+# ~ Menu
 SKIP_MAIN_MENU = False
 MAIN_MENU_BACKGROUND_IMAGE = 'images/menu/3.png'
 SETTINGS_MENU_BACKGROUND_IMAGE = 'images/menu/4.png'
 STORE_MENU_BACKGROUND_IMAGE = 'images/menu/1.png'
 
+# ~ Pieces
 PIECES = ["pawn", "rook", "knight", "bishop", "queen", "king"]
 PIECE_COLORS = ["white", "black"]
 PIECE_ABR_DICT = { piece: piece[0] if piece != "knight" else "n" for piece in PIECES }
 PIECE_ABR_DICT.update({ v: k for k, v in PIECE_ABR_DICT.items() })
 
+# ~ Objects and textures
 MODEL_TEMPLATE = { "obj": None, "texture": None, "vao": None, "vbo": None, "model_matrix": None }
 CHESSBOARD_OBJECT_PATH = 'models/board/board.obj'
 CHESSBOARD_TEXTURE_PATH = 'models/board/board.png'
@@ -28,6 +34,7 @@ PIECE_OBJECT_PATHS = { piece: f'models/pieces/{piece}/{piece}.obj' for piece in 
 PIECE_TEXTURE_PATHS = { color: { piece: f'models/pieces/{piece}/{color}.png' for piece in PIECES } for color in PIECE_COLORS }
 SKYBOX_PATH = 'skybox/set_in_space'
 
+# ~ Camera
 CAMERA_MOUSE_DRAG_SENSITIVITY = 0.1
 CAMERA_DEFAULT_YAW = {
     "white": 90,
@@ -36,9 +43,12 @@ CAMERA_DEFAULT_YAW = {
 CAMERA_DEFAULT_PITCH = 25 # i.e. 1 := top-down, 90 := side-view
 CAMERA_MIN_DISTANCE = 0.75
 CAMERA_MAX_DISTANCE = 5
-CAMERA_DEFAULT_ANIMATION_SPEED = 10
 
-# Credits.
+# ~ Camera animation
+CAMERA_DEFAULT_ANIMATION_SPEED = 10
+CAMERA_USE_INTRO_ANIMATION = False
+
+# ~ Credits
 developers = [
     'Jonathan Gilbert',
     'Gani Begawala',
