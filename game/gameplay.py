@@ -119,7 +119,7 @@ def move_hovered_square(direction: str) -> Tuple[int, int]:
     elif direction == 'left' and file > 0: file -= 1
     elif direction == 'right' and file < 7: file += 1
 
-    print(f"Hovered square: {chess.SQUARE_NAMES[rank * 8 + file]}")
+    if hovered_square != (file, rank): print(f"Hovered square: {chess.SQUARE_NAMES[rank * 8 + file]}")
 
     return (file, rank)
 
@@ -135,6 +135,7 @@ def process_move(target_square: Tuple[int, int]):
             print(f"~ You moved: {move}")
             is_selected = False
             hovered_square = target_square  # Move hovered square to the last moved position
+            game.display_whos_turn()
         else:
             print(f"Invalid move: {move}")
     
@@ -143,17 +144,29 @@ def process_move(target_square: Tuple[int, int]):
 
 def select_square(square_to_select: Tuple[int, int]):
     global selected_square, valid_move_squares, hovered_square
-    selected_square = square_to_select
     
-    # Get valid moves and convert to board coordinates.
-    from_square = chess.SQUARE_NAMES[selected_square[1] * 8 + selected_square[0]]
-    valid_moves = game.get_valid_moves(from_square)
-    valid_move_squares = [(file, rank) for file, rank in valid_moves]
+    # Convert the hovered square to the standard chess square notation.
+    from_square_index = square_to_select[1] * 8 + square_to_select[0]
+    from_square_name = chess.SQUARE_NAMES[from_square_index]
     
-    print(f"Selected square: {chess.SQUARE_NAMES[square_to_select[1] * 8 + square_to_select[0]]}")
+    # Retrieve the piece at the selected square
+    piece = game.board.piece_at(chess.parse_square(from_square_name))
+    
+    # Retrieve the color of the piece
+    piece_color = None if not piece else "white" if piece.color == chess.WHITE else "black"
+    
+    # Check if the piece color matches the current player's turn.
+    if piece is not None and game.get_whos_turn() == piece_color:
+        selected_square = square_to_select
+        valid_moves = game.get_valid_moves(from_square_name)
+        valid_move_squares = [(file, rank) for file, rank in valid_moves]
+        print(f"Selected square: {from_square_name}")
+    else: print(f"Cannot select this square. {'Not your piece' if piece else 'Select a piece'}.")
 
 # ~ AI opponent
 def attempt_move_ai_opponent():
     if game.ai_opponent_enabled and game.board.turn == chess.BLACK:
         ai_move = game.make_ai_move()
-        if ai_move: print(f"~ AI moved: {ai_move}")
+        if ai_move:
+            print(f"~ AI moved: {ai_move}")
+            game.display_whos_turn()

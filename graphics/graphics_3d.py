@@ -38,7 +38,7 @@ fov: float = 75
 # (Mouse dragging - rotate around the board - uses yaw/pitch instead of angleX/angleY):
 is_dragging: bool = False
 last_mouse_pos: Tuple[int, int] = (0, 0)
-yaw: float = np.deg2rad(CAMERA_DEFAULT_YAW["black"])
+yaw: float = np.deg2rad(CAMERA_DEFAULT_YAW["white"])
 pitch: float = np.deg2rad(CAMERA_DEFAULT_PITCH)
 # (Mouse scrolling - zoom in/out - uses 
 camera_distance: float = np.linalg.norm(eye)

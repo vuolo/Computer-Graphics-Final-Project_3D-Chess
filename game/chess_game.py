@@ -68,6 +68,12 @@ class ChessGame:
              self.board.can_claim_draw(): return "draw"
              
         return None  # If none of the above, the game is still ongoing.
+    
+    def get_whos_turn(self):
+        return "white" if self.board.turn == chess.WHITE else "black"
+    
+    def display_whos_turn(self):
+        print("[White's Turn]" if self.board.turn == chess.WHITE else "[Black's Turn]")
 
     # ~ Board
     def get_board_visual(self):
