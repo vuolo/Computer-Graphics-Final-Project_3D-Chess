@@ -8,7 +8,7 @@ WINDOW.update({"display": (WINDOW["width"], WINDOW["height"])})
 STOCKFISH_PATH_WINDOWS = './stockfish/stockfish-windows-x86-64-avx2.exe'
 STOCKFISH_PATH_LINUX = './stockfish/stockfish' # MacOS/Linux
 
-AI_OPPONENT_DEFAULT_ENABLED = True
+AI_OPPONENT_DEFAULT_ENABLED = False
 AI_OPPONENT_DEFAULT_ELO = 900  # Make the AI aim for an engine strength of the given Elo (i.e. from 0 to 4000).
 
 SKIP_MAIN_MENU = False
@@ -26,7 +26,7 @@ CHESSBOARD_OBJECT_PATH = 'models/board/board.obj'
 CHESSBOARD_TEXTURE_PATH = 'models/board/board.png'
 PIECE_OBJECT_PATHS = { piece: f'models/pieces/{piece}/{piece}.obj' for piece in PIECES }
 PIECE_TEXTURE_PATHS = { color: { piece: f'models/pieces/{piece}/{color}.png' for piece in PIECES } for color in PIECE_COLORS }
-SKYBOX_PATH = 'skybox/ugly'
+SKYBOX_PATH = 'skybox/set_in_space'
 
 CAMERA_MOUSE_DRAG_SENSITIVITY = 0.1
 CAMERA_DEFAULT_YAW = {
@@ -36,6 +36,7 @@ CAMERA_DEFAULT_YAW = {
 CAMERA_DEFAULT_PITCH = 25 # i.e. 1 := top-down, 90 := side-view
 CAMERA_MIN_DISTANCE = 0.75
 CAMERA_MAX_DISTANCE = 5
+CAMERA_DEFAULT_ANIMATION_SPEED = 10
 
 # Credits.
 developers = [

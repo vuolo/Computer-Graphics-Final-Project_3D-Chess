@@ -9,19 +9,22 @@ import chess
 from constants import WINDOW
 from game.chess_game import ChessGame
 # from graphics.graphics_2d import pixel_to_board_coords, board_coords_to_notation, display_endgame_message, display_turn_indicator
-from graphics.graphics_3d import handle_mouse_events#, get_ray_from_mouse, intersect_ray_with_plane, determine_square_from_intersection
+from graphics.graphics_3d import handle_mouse_events, rotate_camera_to_side #, get_ray_from_mouse, intersect_ray_with_plane, determine_square_from_intersection
+from util.game import notation_to_coords
 
 # Global variables.
 game: Optional['ChessGame'] = None
 clock: Optional['pygame.time.Clock'] = None
 selected_square: Optional[str] = None  # Keep track of the user-selected square.
 valid_move_squares: Optional[List[Tuple[int, int]]] = None # Displays highlighted squares that the user can move to.
-hovered_square: Tuple[int, int] = (0, 0)  # Hovered square coordinates (file, rank)
+highlighted_square: Tuple[int, int] = (0, 0)  # Currently highlighted square coordinates (file, rank)
+last_highlighted_white: Tuple[int, int] = notation_to_coords('d2')
+last_highlighted_black: Tuple[int, int] = notation_to_coords('e7')
 is_selected: bool = False  # State to track if a square is selected
 
 # ~ Main
 def gameplay_setup():
-    global game, clock
+    global game, clock, highlighted_square, last_highlighted_white, last_highlighted_black
     game = ChessGame()
     
     # Initialize pygame.
@@ -30,11 +33,14 @@ def gameplay_setup():
     pygame.display.set_caption("3D Chess")
     clock = pygame.time.Clock()
     
+    # Set the initial highlighted square based on the player's turn
+    highlighted_square = last_highlighted_white if game.get_whos_turn() == "white" else last_highlighted_black
+    
     return game
 
 # ~ Game loop
 def pre_draw_gameloop():
-    global clock, hovered_square, is_selected
+    global clock, highlighted_square, is_selected
     clock.tick(100)
     events = pygame.event.get()
     
@@ -42,15 +48,15 @@ def pre_draw_gameloop():
         if event.type == pygame.QUIT:
             return 'quit'
         
-        # Use the keyboard to move the hovered square (WASD/↑←↓→ for movement, SPACEBAR for selection).
+        # Use the keyboard to move the highlighted square (WASD/↑←↓→ for movement, SPACEBAR for selection).
         elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_w or event.key == pygame.K_UP: hovered_square = move_hovered_square('up')
-            elif event.key == pygame.K_s or event.key == pygame.K_DOWN: hovered_square = move_hovered_square('down')
-            elif event.key == pygame.K_a or event.key == pygame.K_LEFT: hovered_square = move_hovered_square('left')
-            elif event.key == pygame.K_d or event.key == pygame.K_RIGHT: hovered_square = move_hovered_square('right')
+            if event.key == pygame.K_w or event.key == pygame.K_UP: highlighted_square = move_highlighted_square('up')
+            elif event.key == pygame.K_s or event.key == pygame.K_DOWN: highlighted_square = move_highlighted_square('down')
+            elif event.key == pygame.K_a or event.key == pygame.K_LEFT: highlighted_square = move_highlighted_square('left')
+            elif event.key == pygame.K_d or event.key == pygame.K_RIGHT: highlighted_square = move_highlighted_square('right')
             elif event.key == pygame.K_SPACE:
-                if is_selected: process_move(hovered_square)
-                else: select_square(hovered_square)
+                if is_selected: process_move(highlighted_square)
+                else: select_square(highlighted_square)
                 is_selected = not is_selected
             elif event.key == pygame.K_BACKSPACE:
                 selected_square = None
@@ -111,41 +117,69 @@ def post_draw_gameloop():
 #                 print("No intersection with the chessboard plane.")  # Logging
 
 # ~ Movement
-def move_hovered_square(direction: str) -> Tuple[int, int]:
-    file, rank = hovered_square
-    
-    if direction == 'up' and rank < 7: rank += 1
-    elif direction == 'down' and rank > 0: rank -= 1
-    elif direction == 'left' and file > 0: file -= 1
-    elif direction == 'right' and file < 7: file += 1
+def move_highlighted_square(direction: str) -> Tuple[int, int]:
+    global highlighted_square, last_highlighted_white, last_highlighted_black
+    file, rank = highlighted_square
+    turn = game.get_whos_turn()
 
-    if hovered_square != (file, rank): print(f"Hovered square: {chess.SQUARE_NAMES[rank * 8 + file]}")
+    # Invert controls for black (since they are playing on the other side).
+    if not game.get_ai_opponent_enabled() and turn == "black":
+        if direction == 'up': rank -= 1
+        elif direction == 'down': rank += 1
+        elif direction == 'left': file += 1
+        elif direction == 'right': file -= 1
+    else:
+        if direction == 'up': rank += 1
+        elif direction == 'down': rank -= 1
+        elif direction == 'left': file -= 1
+        elif direction == 'right': file += 1
+        
+    # Ensure the new position is within the board boundaries.
+    file = max(0, min(7, file))
+    rank = max(0, min(7, rank))
+
+    if highlighted_square != (file, rank): print(f"Highlighted square: {chess.SQUARE_NAMES[rank * 8 + file]}")
 
     return (file, rank)
 
 def process_move(target_square: Tuple[int, int]):
     """ Process a move from the currently selected square to the specified square. """
-    global selected_square, valid_move_squares, hovered_square, is_selected
+    global selected_square, valid_move_squares
     
     if selected_square:
         from_square = chess.SQUARE_NAMES[selected_square[1] * 8 + selected_square[0]]
         to_square = chess.SQUARE_NAMES[target_square[1] * 8 + target_square[0]]
         move = f"{from_square}{to_square}"
-        if game.make_move(move):
-            print(f"~ You moved: {move}")
-            is_selected = False
-            hovered_square = target_square  # Move hovered square to the last moved position
-            game.display_whos_turn()
-        else:
-            print(f"Invalid move: {move}")
+        if game.make_move(move): post_successful_move_processing(move, target_square)
+        else: print(f"Invalid move: {move}")
     
     selected_square = None
     valid_move_squares = None
+    
+def post_successful_move_processing(move=None, target_square=None):
+    global is_selected, highlighted_square, last_highlighted_white, last_highlighted_black
+    
+    print(f"~ You moved: {move}")
+    is_selected = False
+    game.display_whos_turn()
+    
+    if game.get_ai_opponent_enabled(): return
+    
+    rotate_camera_to_side(game.get_whos_turn())
+    
+    # Update the last highlighted square for the side that made the move and restore the highlighted square for the other side.
+    if game.get_whos_turn() == "black":
+        last_highlighted_white = target_square
+        highlighted_square = last_highlighted_black
+    else:
+        last_highlighted_black = target_square
+        highlighted_square = last_highlighted_white
+        
 
 def select_square(square_to_select: Tuple[int, int]):
-    global selected_square, valid_move_squares, hovered_square
+    global selected_square, valid_move_squares, highlighted_square, last_highlighted_white, last_highlighted_black
     
-    # Convert the hovered square to the standard chess square notation.
+    # Convert the highlighted square to the standard chess square notation.
     from_square_index = square_to_select[1] * 8 + square_to_select[0]
     from_square_name = chess.SQUARE_NAMES[from_square_index]
     
@@ -162,6 +196,10 @@ def select_square(square_to_select: Tuple[int, int]):
         valid_move_squares = [(file, rank) for file, rank in valid_moves]
         print(f"Selected square: {from_square_name}")
     else: print(f"Cannot select this square. {'Not your piece' if piece else 'Select a piece'}.")
+    
+    # Save the highlighted square for the current player.
+    if game.get_whos_turn() == "white": last_highlighted_white = square_to_select
+    else: last_highlighted_black = square_to_select
 
 # ~ AI opponent
 def attempt_move_ai_opponent():

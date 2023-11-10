@@ -13,7 +13,8 @@ import platform
 # Local application imports.
 from graphics.graphics_2d import setup_2d_graphics
 from game.chess_game import ChessGame
-from constants import WINDOW, PIECES, PIECE_ABR_DICT, PIECE_COLORS, MODEL_TEMPLATE, CHESSBOARD_OBJECT_PATH, CHESSBOARD_TEXTURE_PATH, SKYBOX_PATH, PIECE_OBJECT_PATHS, PIECE_TEXTURE_PATHS, CAMERA_MOUSE_DRAG_SENSITIVITY, CAMERA_DEFAULT_YAW, CAMERA_DEFAULT_PITCH, CAMERA_MIN_DISTANCE, CAMERA_MAX_DISTANCE
+from constants import WINDOW, PIECES, PIECE_ABR_DICT, PIECE_COLORS, MODEL_TEMPLATE, CHESSBOARD_OBJECT_PATH, CHESSBOARD_TEXTURE_PATH, SKYBOX_PATH, PIECE_OBJECT_PATHS, PIECE_TEXTURE_PATHS, CAMERA_MOUSE_DRAG_SENSITIVITY, CAMERA_DEFAULT_YAW, CAMERA_DEFAULT_PITCH, CAMERA_MIN_DISTANCE, CAMERA_MAX_DISTANCE, CAMERA_DEFAULT_ANIMATION_SPEED
+from util.animation import ease_in_out, build_intro_camera_animation_keyframes
 from util.objLoaderV4 import ObjLoader
 from util.cubemap import load_cubemap_textures, load_texture
 from util.shaderLoaderV3 import ShaderProgram
@@ -29,19 +30,30 @@ shaderProgram: Optional[ShaderProgram] = None
 view_matrix: Optional[np.ndarray] = None
 projection_matrix: Optional[np.ndarray] = None
 rotated_eye: Optional[np.ndarray] = None
-eye: np.ndarray = np.array([0, 0, 2])  # Make the camera "eye" 2 units away from the origin along the positive z-axis.
-target: np.ndarray = np.array([0, 0, 0])  # Make the camera look at (target) the origin.
-up: np.ndarray = np.array([0, 1, 0]) # Make the camera's "up" direction the positive y-axis.
-near_plane: float = 0.1
-far_plane: float = 10
-fov: float = 75
+eye = np.array([0, 0, 2])  # Make the camera "eye" 2 units away from the origin along the positive z-axis.
+target = np.array([0, 0, 0])  # Make the camera look at (target) the origin.
+up = np.array([0, 1, 0]) # Make the camera's "up" direction the positive y-axis.
+near_plane = 0.1
+far_plane = 15
+fov = 75
 # (Mouse dragging - rotate around the board - uses yaw/pitch instead of angleX/angleY):
-is_dragging: bool = False
+is_dragging = False
 last_mouse_pos: Tuple[int, int] = (0, 0)
 yaw: float = np.deg2rad(CAMERA_DEFAULT_YAW["white"])
 pitch: float = np.deg2rad(CAMERA_DEFAULT_PITCH)
-# (Mouse scrolling - zoom in/out - uses 
+# (Mouse scrolling - zoom in/out - uses camera_distance to adjust the distance of the camera from the target):
 camera_distance: float = np.linalg.norm(eye)
+# TODO: move these animations to a separate file
+# (Camera-pan animation):
+target_yaw = yaw
+target_pitch = pitch
+is_animating = False
+animation_speed = CAMERA_DEFAULT_ANIMATION_SPEED
+# (Intro camera animation):
+intro_animation_started = True
+intro_animation_time = 0
+intro_keyframes = build_intro_camera_animation_keyframes(yaw, pitch, camera_distance)["20"] # Change from range 1 to 23 for varying intro camera animations
+current_intro_keyframe = 0
 
 # ~ Main
 def setup_3d_graphics(new_game):
@@ -73,19 +85,23 @@ def setup_3d_graphics(new_game):
     return screen
 
 # ~ Graphics
-def draw_graphics():
+def draw_graphics(delta_time):
+    global intro_animation_started
+    if not intro_animation_started: update_camera_animation(delta_time)
+    
     # Prepare the 3D scene.
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
     # Draw the 3D scene.
-    update_graphics()
+    update_graphics(delta_time)
     draw_chessboard()
     draw_pieces()
     draw_skybox()
     
-def update_graphics():
-    global rotated_eye, camera_distance, yaw, pitch, view_matrix, projection_matrix
-
+def update_graphics(delta_time):
+    global rotated_eye, camera_distance, yaw, pitch, view_matrix, projection_matrix, is_animating
+    update_camera_animation(delta_time)
+    
     # Calculate camera position using spherical coordinates.
     camera_x = camera_distance * np.sin(pitch) * np.cos(yaw)
     camera_y = camera_distance * np.cos(pitch)
@@ -114,6 +130,81 @@ def setup_generic_shaderProgram():
     # Assign the texture units to the shader.
     shaderProgram["tex2D"] = 0
     shaderProgram["cubeMapTex"] = 1
+    
+# ~ Camera intro animation
+def start_intro_camera_animation():
+    global intro_animation_time, current_intro_keyframe
+    intro_animation_time = 0
+    current_intro_keyframe = 0
+    
+def stop_intro_camera_animation():
+    global intro_animation_started, current_intro_keyframe, yaw, pitch
+    intro_animation_started = False
+    current_intro_keyframe = len(intro_keyframes) - 1  # Set to the last keyframe.
+    
+def start_camera_rotation_animation(new_yaw_degrees=yaw, new_pitch_degrees=pitch):
+    global target_yaw, target_pitch, is_animating
+    target_yaw = np.deg2rad(new_yaw_degrees)
+    target_pitch = np.deg2rad(new_pitch_degrees)
+    is_animating = True
+
+# ~ Camera rotation animation (ease-in-out)
+def update_camera_animation(delta_time):
+    global yaw, pitch, camera_distance, intro_animation_time, current_intro_keyframe, intro_animation_started, is_animating, target_yaw, target_pitch
+    
+    # If the intro animation is active, update it.
+    if intro_animation_started and current_intro_keyframe < len(intro_keyframes) - 1:
+        # Calculate the progress between the current and the next keyframe.
+        start_frame = intro_keyframes[current_intro_keyframe]
+        end_frame = intro_keyframes[current_intro_keyframe + 1]
+        frame_duration = end_frame["time"] - start_frame["time"]
+        progress = (intro_animation_time - start_frame["time"]) / frame_duration
+        eased_progress = ease_in_out(progress)
+        
+        # Interpolate yaw, pitch, and distance.
+        yaw = np.interp(eased_progress, [0, 1], [start_frame["yaw"], end_frame["yaw"]])
+        pitch = np.interp(eased_progress, [0, 1], [start_frame["pitch"], end_frame["pitch"]])
+        camera_distance = np.interp(eased_progress, [0, 1], [start_frame["distance"], end_frame["distance"]])
+        
+        # Update the time and check if we should move to the next keyframe.
+        intro_animation_time += delta_time
+        if intro_animation_time >= end_frame["time"]:
+            current_intro_keyframe += 1
+            if current_intro_keyframe >= len(intro_keyframes) - 1:
+                intro_animation_started = False  # End the intro animation.
+    elif is_animating:
+        # Define the threshold (in degrees) for when to stop the animation.
+        threshold = 0.1
+
+        # Convert yaw and pitch to degrees for easier control.
+        yaw_degrees = np.rad2deg(yaw)
+        pitch_degrees = np.rad2deg(pitch)
+        target_yaw_degrees = np.rad2deg(target_yaw)
+        target_pitch_degrees = np.rad2deg(target_pitch)
+
+        # Calculate the difference between current and target angles in degrees.
+        yaw_difference = target_yaw_degrees - yaw_degrees
+        pitch_difference = target_pitch_degrees - pitch_degrees
+
+        # Interpolate angles with an ease-out effect.
+        yaw_degrees += yaw_difference * animation_speed * delta_time
+        pitch_degrees += pitch_difference * animation_speed * delta_time
+
+        # Convert back to radians for the view matrix calculation.
+        yaw = np.deg2rad(yaw_degrees)
+        pitch = np.deg2rad(pitch_degrees)
+
+        # Check if the animation is close to finishing: if so, stop the animation.
+        if abs(yaw_difference) < threshold and abs(pitch_difference) < threshold:
+            yaw, pitch = np.deg2rad(target_yaw_degrees), np.deg2rad(target_pitch_degrees)
+            is_animating = False
+
+def rotate_camera_to_side(side):
+    ''' Rotate the camera to view the board from a given side. '''
+    global intro_animation_started
+    if intro_animation_started: stop_intro_camera_animation() # If the intro animation is in progress, stop it before starting a new one.
+    
+    start_camera_rotation_animation(CAMERA_DEFAULT_YAW[side], CAMERA_DEFAULT_PITCH)
 
 # ~ Chessboard
 def setup_chessboard():

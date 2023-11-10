@@ -15,10 +15,16 @@ def main():
         init_main_menu(pygame.display.set_mode(WINDOW["display"]), game)
     setup_3d_graphics(game)
     
+    last_time = pygame.time.get_ticks()
+    
     # Main Loop.
     while True:
+        current_time = pygame.time.get_ticks()
+        delta_time = (current_time - last_time) / 1000.0  # Convert milliseconds to seconds
+        last_time = current_time
+        
         if pre_draw_gameloop() == 'quit': break
-        draw_graphics()
+        draw_graphics(delta_time)
         post_draw_gameloop()
 
     # Cleanup.
