@@ -34,8 +34,8 @@ target: np.ndarray = np.array([0, 0, 0])  # Make the camera look at (target) the
 up: np.ndarray = np.array([0, 1, 0])
 near_plane: float = 0.1
 far_plane: float = 10
-angleY: float = np.deg2rad(45)
-angleX: float = np.deg2rad(120)
+angleY: float = np.deg2rad(0)
+angleX: float = np.deg2rad(90)
 fov: float = 65
 
 def setup_3d_graphics(new_game):
@@ -180,11 +180,10 @@ def setup_pieces():
             glEnableVertexAttribArray(uv_loc)
             
             # Create a 4x4 model matrix (to transform the piece from model space to world space).
-            scale_factor = 2 / pieces[color][piece]["obj"].dia * 0.1 # Scale the piece down by 80% (to fit on the chessboard squares properly).
+            scale_factor = 2 / pieces[color][piece]["obj"].dia * 0.1075 # Scale the piece down to fit on the chessboard squares properly.
             translation_matrix = pyrr.matrix44.create_from_translation(-pieces[color][piece]["obj"].center)
             scale_matrix = pyrr.matrix44.create_from_scale([scale_factor, scale_factor, scale_factor])
             pieces[color][piece]["model_matrix"] = pyrr.matrix44.multiply(translation_matrix, scale_matrix)
-            print(f"color: {color}, piece: {piece}, scale_factor: {scale_factor}", f"dia: {pieces[color][piece]['obj'].dia}", f"center: {pieces[color][piece]['obj'].center}", f"model_matrix: {pieces[color][piece]['model_matrix']}", sep="\n")
             
             # Load the piece's texture.
             pieces[color][piece]["texture"] = {}
@@ -296,7 +295,7 @@ def draw_pieces():
                 piece_model = pieces[color][piece_type]
 
                 # Calculate the piece's model matrix based on its position on the board.
-                piece_position = np.array([col - 3.75, 0, -(row - 3.75)])  # Center the piece on the square.
+                piece_position = np.array([col - 3.5, 0, -(row - 3.5)])  # Center the piece on the square.
                 translation_matrix = pyrr.matrix44.create_from_translation(piece_position)
                 model_matrix = pyrr.matrix44.multiply(translation_matrix, piece_model["model_matrix"])
 
