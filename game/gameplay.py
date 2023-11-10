@@ -156,17 +156,10 @@ def process_move(target_square: Tuple[int, int]):
     global selected_square, valid_move_squares
     
     if selected_square:
-<<<<<<< Updated upstream
-        from_square = chess.SQUARE_NAMES[selected_square[1] * 8 + selected_square[0]]
-        to_square = chess.SQUARE_NAMES[target_square[1] * 8 + target_square[0]]
-        move = f"{from_square}{to_square}"
-        if game.make_move(move): user_move_sound(move, target_square)
-        else: print(f"Invalid move: {move}")
-=======
         # Convert indices to algebraic notation
         from_square_name = chess.SQUARE_NAMES[selected_square[1] * 8 + selected_square[0]]
         to_square_name = chess.SQUARE_NAMES[target_square[1] * 8 + target_square[0]]
-        
+
         move = f"{from_square_name}{to_square_name}"
         if game.make_move(move):
             # Create an animation for the moving piece
@@ -176,8 +169,7 @@ def process_move(target_square: Tuple[int, int]):
             post_successful_move_processing(move, target_square)
         else:
             print(f"Invalid move: {move}")
->>>>>>> Stashed changes
-    
+            
     selected_square = None
     valid_move_squares = None
     
