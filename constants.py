@@ -38,6 +38,8 @@ CAMERA_MIN_DISTANCE = 0.75
 CAMERA_MAX_DISTANCE = 5
 CAMERA_DEFAULT_ANIMATION_SPEED = 10
 
+MOUSE_POSITION_DELTA = 2.1 # Delta that determines a click, in pixels
+
 # Credits.
 developers = [
     'Jonathan Gilbert',
