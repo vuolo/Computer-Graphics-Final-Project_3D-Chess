@@ -1,13 +1,20 @@
 import numpy as np
+import pygame
 
-# Easing function
+# ~ Camera effects
 def ease_in_out(t):
     if t < 0.5: return 4 * t * t * t
     else:
         f = ((2 * t) - 2)
         return 0.5 * f * f * f + 1
 
-def build_intro_camera_animation_keyframes(yaw, pitch, camera_distance): return {
+def add_shake_effect(position, progress, shake_intensity, shake_frequency):
+    shake_magnitude = shake_intensity * (1 - progress)
+    offset = shake_magnitude * np.sin(pygame.time.get_ticks() * shake_frequency)
+    return position + offset
+
+# ~ Camera animation
+def build_intro_camera_animations(yaw, pitch, camera_distance): return {
     "1": [ # "Grand Entrance"
         {"yaw": np.deg2rad(1), "pitch": np.deg2rad(0), "distance": 10, "time": 0},  # Start from top-down
         {"yaw": np.deg2rad(360), "pitch": np.deg2rad(45), "distance": 5, "time": 3},  # Spin around above the board

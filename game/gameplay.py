@@ -6,10 +6,10 @@ import pygame
 import chess
 
 # Local application imports.
-from constants import WINDOW
+from constants import WINDOW, FRAME_RATE, CAMERA_ANIMATE_AFTER_MOVE
 from game.chess_game import ChessGame
 # from graphics.graphics_2d import pixel_to_board_coords, board_coords_to_notation, display_endgame_message, display_turn_indicator
-from graphics.graphics_3d import handle_mouse_events, rotate_camera_to_side, get_ray_from_mouse, intersect_ray_with_plane, determine_square_from_intersection
+from graphics.graphics_3d import handle_mouse_events, rotate_camera_to_side, get_ray_from_mouse, intersect_ray_with_plane, determine_square_from_intersection, create_piece_animation
 from util.game import notation_to_coords
 
 pygame.mixer.init()
@@ -46,7 +46,7 @@ def gameplay_setup():
 # ~ Game loop
 def pre_draw_gameloop():
     global clock, highlighted_square, is_selected, mouse_click_detected
-    clock.tick(100)
+    clock.tick(FRAME_RATE)
     events = pygame.event.get()
     
     for event in events:
@@ -153,15 +153,30 @@ def user_move_sound(move, target_square):
     post_successful_move_processing(move, target_square)
 
 def process_move(target_square: Tuple[int, int]):
-    """ Process a move from the currently selected square to the specified square. """
     global selected_square, valid_move_squares
     
     if selected_square:
+<<<<<<< Updated upstream
         from_square = chess.SQUARE_NAMES[selected_square[1] * 8 + selected_square[0]]
         to_square = chess.SQUARE_NAMES[target_square[1] * 8 + target_square[0]]
         move = f"{from_square}{to_square}"
         if game.make_move(move): user_move_sound(move, target_square)
         else: print(f"Invalid move: {move}")
+=======
+        # Convert indices to algebraic notation
+        from_square_name = chess.SQUARE_NAMES[selected_square[1] * 8 + selected_square[0]]
+        to_square_name = chess.SQUARE_NAMES[target_square[1] * 8 + target_square[0]]
+        
+        move = f"{from_square_name}{to_square_name}"
+        if game.make_move(move):
+            # Create an animation for the moving piece
+            piece = game.board.piece_at(chess.parse_square(from_square_name))
+            start_time = pygame.time.get_ticks() / 1000.0
+            create_piece_animation(from_square_name, to_square_name, piece, start_time, 1.0)
+            post_successful_move_processing(move, target_square)
+        else:
+            print(f"Invalid move: {move}")
+>>>>>>> Stashed changes
     
     selected_square = None
     valid_move_squares = None
@@ -174,8 +189,7 @@ def post_successful_move_processing(move=None, target_square=None):
     game.display_whos_turn()
     
     if game.get_ai_opponent_enabled(): return
-    
-    rotate_camera_to_side(game.get_whos_turn())
+    if CAMERA_ANIMATE_AFTER_MOVE: rotate_camera_to_side(game.get_whos_turn())
     
     # Update the last highlighted square for the side that made the move and restore the highlighted square for the other side.
     if game.get_whos_turn() == "black":
