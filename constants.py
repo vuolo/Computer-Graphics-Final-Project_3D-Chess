@@ -28,6 +28,15 @@ PIECE_OBJECT_PATHS = { piece: f'models/pieces/{piece}/{piece}.obj' for piece in 
 PIECE_TEXTURE_PATHS = { color: { piece: f'models/pieces/{piece}/{color}.png' for piece in PIECES } for color in PIECE_COLORS }
 SKYBOX_PATH = 'skybox/ugly'
 
+CAMERA_MOUSE_DRAG_SENSITIVITY = 0.1
+CAMERA_DEFAULT_YAW = {
+    "white": 90,
+    "black": 360 - 90
+}
+CAMERA_DEFAULT_PITCH = 25 # i.e. 1 := top-down, 90 := side-view
+CAMERA_MIN_DISTANCE = 0.75
+CAMERA_MAX_DISTANCE = 5
+
 # Credits.
 developers = [
     'Jonathan Gilbert',

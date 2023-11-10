@@ -13,7 +13,7 @@ import platform
 # Local application imports.
 from graphics.graphics_2d import setup_2d_graphics
 from game.chess_game import ChessGame
-from constants import WINDOW, PIECES, PIECE_ABR_DICT, PIECE_COLORS, MODEL_TEMPLATE, CHESSBOARD_OBJECT_PATH, CHESSBOARD_TEXTURE_PATH, SKYBOX_PATH, PIECE_OBJECT_PATHS, PIECE_TEXTURE_PATHS
+from constants import WINDOW, PIECES, PIECE_ABR_DICT, PIECE_COLORS, MODEL_TEMPLATE, CHESSBOARD_OBJECT_PATH, CHESSBOARD_TEXTURE_PATH, SKYBOX_PATH, PIECE_OBJECT_PATHS, PIECE_TEXTURE_PATHS, CAMERA_MOUSE_DRAG_SENSITIVITY, CAMERA_DEFAULT_YAW, CAMERA_DEFAULT_PITCH, CAMERA_MIN_DISTANCE, CAMERA_MAX_DISTANCE
 from util.objLoaderV4 import ObjLoader
 from util.cubemap import load_cubemap_textures, load_texture
 from util.shaderLoaderV3 import ShaderProgram
@@ -35,11 +35,13 @@ up: np.ndarray = np.array([0, 1, 0]) # Make the camera's "up" direction the posi
 near_plane: float = 0.1
 far_plane: float = 10
 fov: float = 75
-# (Mouse dragging - uses yaw/pitch instead of angleX/angleY):
+# (Mouse dragging - rotate around the board - uses yaw/pitch instead of angleX/angleY):
 is_dragging: bool = False
 last_mouse_pos: Tuple[int, int] = (0, 0)
-yaw = 0.0  # Rotation around the vertical axis.
-pitch = np.deg2rad(75)  # Initial pitch angle (looking down at the board).
+yaw: float = np.deg2rad(CAMERA_DEFAULT_YAW["black"])
+pitch: float = np.deg2rad(CAMERA_DEFAULT_PITCH)
+# (Mouse scrolling - zoom in/out - uses 
+camera_distance: float = np.linalg.norm(eye)
 
 # ~ Main
 def setup_3d_graphics(new_game):
@@ -82,10 +84,9 @@ def draw_graphics():
     draw_skybox()
     
 def update_graphics():
-    global rotated_eye, yaw, pitch, view_matrix, projection_matrix
+    global rotated_eye, camera_distance, yaw, pitch, view_matrix, projection_matrix
 
     # Calculate camera position using spherical coordinates.
-    camera_distance = np.linalg.norm(eye)  # Maintain the distance from the target.
     camera_x = camera_distance * np.sin(pitch) * np.cos(yaw)
     camera_y = camera_distance * np.cos(pitch)
     camera_z = camera_distance * np.sin(pitch) * np.sin(yaw)
@@ -342,15 +343,19 @@ def draw_skybox():
     
 # ~ Mouse events
 def handle_mouse_events(events):
-    global is_dragging, last_mouse_pos, yaw, pitch
+    global is_dragging, last_mouse_pos, yaw, pitch, camera_distance
 
     for event in events:
         if event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1:  # Left click
+            if event.button == 1:  # (Left click)
                 is_dragging = True
                 last_mouse_pos = pygame.mouse.get_pos()
+            elif event.button == 4:  # (Scroll up)
+                camera_distance = max(CAMERA_MIN_DISTANCE, camera_distance - 1.0)
+            elif event.button == 5:  # (Scroll down)
+                camera_distance = min(CAMERA_MAX_DISTANCE, camera_distance + 1.0)
         elif event.type == pygame.MOUSEBUTTONUP:
-            if event.button == 1:  # Left click released
+            if event.button == 1:  # (Left click - released)
                 is_dragging = False
         elif event.type == pygame.MOUSEMOTION:
             if is_dragging:
@@ -359,11 +364,11 @@ def handle_mouse_events(events):
                 dy = current_mouse_pos[1] - last_mouse_pos[1]
                 last_mouse_pos = current_mouse_pos
 
-                # Update yaw and pitch based on mouse movement
-                yaw += np.deg2rad(dx * 0.1)  # Sensitivity factor of 0.1
-                pitch -= np.deg2rad(dy * 0.1)  # Sensitivity factor of 0.1
+                # Update yaw and pitch based on mouse movement.
+                yaw += np.deg2rad(dx * CAMERA_MOUSE_DRAG_SENSITIVITY)
+                pitch -= np.deg2rad(dy * CAMERA_MOUSE_DRAG_SENSITIVITY)
 
-                # Clamp pitch to prevent flipping
+                # Clamp pitch to prevent flipping.
                 pitch = max(min(pitch, np.deg2rad(89)), np.deg2rad(-89))
 
 # # ~ TODO: Mouse raycasting (for click detection)
