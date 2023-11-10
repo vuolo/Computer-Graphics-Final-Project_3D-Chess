@@ -34,11 +34,12 @@ target: np.ndarray = np.array([0, 0, 0])  # Make the camera look at (target) the
 up: np.ndarray = np.array([0, 1, 0]) # Make the camera's "up" direction the positive y-axis.
 near_plane: float = 0.1
 far_plane: float = 10
-angleY: float = np.deg2rad(15)
-angleX: float = np.deg2rad(75)
-fov: float = 65
+fov: float = 75
+# (Mouse dragging - uses yaw/pitch instead of angleX/angleY):
 is_dragging: bool = False
 last_mouse_pos: Tuple[int, int] = (0, 0)
+yaw = 0.0  # Rotation around the vertical axis.
+pitch = np.deg2rad(75)  # Initial pitch angle (looking down at the board).
 
 # ~ Main
 def setup_3d_graphics(new_game):
@@ -81,14 +82,15 @@ def draw_graphics():
     draw_skybox()
     
 def update_graphics():
-    global angleX, angleY, eye, target, up, fov, near_plane, far_plane, view_matrix, projection_matrix, rotated_eye
-    
-    # Create a 4x4 view matrix (to transform the scene from world space to camera (view) space).
-    # • Rotate the camera position using the rotation matrix (we combine the rotation matrices around the X and Y axes to create a single rotation matrix).
-    rotationY_matrix = pyrr.matrix44.create_from_y_rotation(angleY)
-    rotationX_matrix = pyrr.matrix44.create_from_x_rotation(angleX)
-    rotation_matrix = pyrr.matrix44.multiply(rotationY_matrix, rotationX_matrix)
-    rotated_eye = pyrr.matrix44.apply_to_vector(rotation_matrix, eye)
+    global rotated_eye, yaw, pitch, view_matrix, projection_matrix
+
+    # Calculate camera position using spherical coordinates.
+    camera_distance = np.linalg.norm(eye)  # Maintain the distance from the target.
+    camera_x = camera_distance * np.sin(pitch) * np.cos(yaw)
+    camera_y = camera_distance * np.cos(pitch)
+    camera_z = camera_distance * np.sin(pitch) * np.sin(yaw)
+    rotated_eye = np.array([camera_x, camera_y, camera_z])
+
     view_matrix = pyrr.matrix44.create_look_at(rotated_eye, target, up)
     
     # Create a 4x4 projection matrix (to define the perspective projection).
@@ -340,7 +342,7 @@ def draw_skybox():
     
 # ~ Mouse events
 def handle_mouse_events(events):
-    global is_dragging, last_mouse_pos, angleX, angleY
+    global is_dragging, last_mouse_pos, yaw, pitch
 
     for event in events:
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -357,12 +359,12 @@ def handle_mouse_events(events):
                 dy = current_mouse_pos[1] - last_mouse_pos[1]
                 last_mouse_pos = current_mouse_pos
 
-                # Update angles based on mouse movement
-                angleY += np.deg2rad(dx * 0.1)  # Sensitivity factor of 0.1
-                angleX += np.deg2rad(dy * 0.1)  # Sensitivity factor of 0.1
+                # Update yaw and pitch based on mouse movement
+                yaw += np.deg2rad(dx * 0.1)  # Sensitivity factor of 0.1
+                pitch -= np.deg2rad(dy * 0.1)  # Sensitivity factor of 0.1
 
-                # Clamp angleX to prevent flipping
-                angleX = max(min(angleX, np.deg2rad(89)), np.deg2rad(-89))
+                # Clamp pitch to prevent flipping
+                pitch = max(min(pitch, np.deg2rad(89)), np.deg2rad(-89))
 
 # # ~ TODO: Mouse raycasting (for click detection)
 # def get_ray_from_mouse(mouse_x, mouse_y):
