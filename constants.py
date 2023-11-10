@@ -59,6 +59,5 @@ developers = [
 ]
 third_party_credits = """
 Third-Party Resources:
-- TODO: Resource 1: Description
-- TODO: Resource 2: Description
+- skybox.blockadelabs.com
 """
