@@ -46,7 +46,7 @@ CAMERA_MAX_DISTANCE = 5
 
 # ~ Camera animation
 CAMERA_DEFAULT_ANIMATION_SPEED = 10
-CAMERA_USE_INTRO_ANIMATION = False
+CAMERA_USE_INTRO_ANIMATION = True
 
 MOUSE_POSITION_DELTA = 2.1 # Delta that determines a click, in pixels
 
