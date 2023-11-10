@@ -14,7 +14,7 @@ import platform
 # Local application imports.
 from graphics.graphics_2d import setup_2d_graphics
 from game.chess_game import ChessGame
-from constants import WINDOW, PIECES, PIECE_ABR_DICT, PIECE_COLORS, MODEL_TEMPLATE, CHESSBOARD_OBJECT_PATH, CHESSBOARD_TEXTURE_PATH, SKYBOX_PATH, PIECE_OBJECT_PATHS, PIECE_TEXTURE_PATHS, CAMERA_MOUSE_DRAG_SENSITIVITY, CAMERA_DEFAULT_YAW, CAMERA_DEFAULT_PITCH, CAMERA_MIN_DISTANCE, CAMERA_MAX_DISTANCE, CAMERA_DEFAULT_ANIMATION_SPEED, MOUSE_POSITION_DELTA
+from constants import WINDOW, PIECES, PIECE_ABR_DICT, PIECE_COLORS, MODEL_TEMPLATE, CHESSBOARD_OBJECT_PATH, CHESSBOARD_TEXTURE_PATH, SKYBOX_PATH, PIECE_OBJECT_PATHS, PIECE_TEXTURE_PATHS, CAMERA_MOUSE_DRAG_SENSITIVITY, CAMERA_DEFAULT_YAW, CAMERA_DEFAULT_PITCH, CAMERA_MIN_DISTANCE, CAMERA_MAX_DISTANCE, CAMERA_DEFAULT_ANIMATION_SPEED, CAMERA_USE_INTRO_ANIMATION, MOUSE_POSITION_DELTA
 from util.animation import ease_in_out, build_intro_camera_animation_keyframes
 from util.objLoaderV4 import ObjLoader
 from util.cubemap import load_cubemap_textures, load_texture
@@ -52,7 +52,7 @@ target_pitch = pitch
 is_animating = False
 animation_speed = CAMERA_DEFAULT_ANIMATION_SPEED
 # (Intro camera animation):
-intro_animation_started = True
+intro_animation_started = CAMERA_USE_INTRO_ANIMATION
 intro_animation_time = 0
 intro_keyframes = build_intro_camera_animation_keyframes(yaw, pitch, camera_distance)["20"] # Change from range 1 to 23 for varying intro camera animations
 current_intro_keyframe = 0
@@ -301,7 +301,7 @@ def setup_pieces():
             glEnableVertexAttribArray(uv_loc)
             
             # Create a 4x4 model matrix (to transform the piece from model space to world space).
-            scale_factor = 2 / pieces[color][piece]["obj"].dia * 0.1075 # Scale the piece down to fit on the chessboard squares properly.
+            scale_factor = 2 / pieces[color][piece]["obj"].dia * 0.1 # Scale the piece down to fit on the chessboard squares properly.
             translation_matrix = pyrr.matrix44.create_from_translation(-pieces[color][piece]["obj"].center)
             scale_matrix = pyrr.matrix44.create_from_scale([scale_factor, scale_factor, scale_factor])
             pieces[color][piece]["model_matrix"] = pyrr.matrix44.multiply(translation_matrix, scale_matrix)
@@ -356,7 +356,13 @@ def draw_pieces():
                 piece_model = pieces[color][piece_type]
 
                 # Calculate the piece's model matrix based on its position on the board.
-                piece_position = np.array([col - 3.5, 0, row - 3.5])  # Center the piece on the square.
+                # piece_position = np.array([col - 3.5, 0, row - 3.5])  # Center the piece on the square.
+                offset_x, offset_z, square_size = 0, 0, 1.575
+                piece_position = np.array([
+                    (col - 3.5) * square_size + offset_x, 
+                    0, 
+                    (row - 3.5) * square_size + offset_z
+                ])
                 translation_matrix = pyrr.matrix44.create_from_translation(piece_position)
                 model_matrix = pyrr.matrix44.multiply(translation_matrix, piece_model["model_matrix"])
 

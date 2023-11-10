@@ -210,3 +210,37 @@ def attempt_move_ai_opponent():
         if ai_move:
             print(f"~ AI moved: {ai_move}")
             game.display_whos_turn()
+            
+# ~ Click detection (for 2D graphics)
+# def handle_mouse_click_2d(events):
+#     global selected_square, valid_move_squares
+#     for event in events:
+#         if event.type == pygame.MOUSEBUTTONDOWN:
+#             x, y = pygame.mouse.get_pos()
+#             board_x, board_y = pixel_to_board_coords(x, y)
+#             clicked_square = board_coords_to_notation(board_x, board_y)
+#             if selected_square and selected_square != clicked_square: process_move(clicked_square)
+#             else: select_square(clicked_square)
+
+# ~ TODO: Click detection (for 3D graphics)
+# def handle_mouse_click(events):
+#     global selected_square, valid_move_squares
+#     for event in events:
+#         if event.type == pygame.MOUSEBUTTONDOWN:
+#             x, y = pygame.mouse.get_pos()
+#             ray_origin, ray_direction = get_ray_from_mouse(x, y)
+#             print("~ Mouse Clicked:")
+#             print(f"Ray Origin: {ray_origin}, Ray Direction: {ray_direction}")  # Logging
+
+#             plane_origin = np.array([0, 0, 0])  # The chessboard is centered at the origin.
+#             plane_normal = np.array([0, 1, -3])  # The chessboard plane is horizontal.
+#             intersection_point = intersect_ray_with_plane(ray_origin, ray_direction, plane_origin, plane_normal)
+
+#             if intersection_point is not None:
+#                 print(f"Intersection Point: {intersection_point}")  # Logging
+#                 clicked_square = determine_square_from_intersection(intersection_point)
+#                 print(f"Clicked Square: {clicked_square}")  # Logging
+#                 if selected_square and selected_square != clicked_square: process_move(clicked_square)
+#                 else: select_square(clicked_square)
+#             else:
+#                 print("No intersection with the chessboard plane.")  # Logging
