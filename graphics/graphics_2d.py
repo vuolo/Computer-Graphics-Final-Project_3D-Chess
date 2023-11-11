@@ -4,7 +4,7 @@ from OpenGL.GLU import *
 from OpenGL.GLUT import *
 import pygame
 import chess
-    
+
 def setup_2d_graphics():
     glOrtho(0.0, 8, 0.0, 8, -1.0, 1.0)
     glEnable(GL_BLEND)
@@ -57,7 +57,6 @@ def draw_text(text, x, y, color):
 
     glWindowPos2d(centered_x, centered_y)
     glDrawPixels(text_width, text_height, GL_RGBA, GL_UNSIGNED_BYTE, text_data)
-
     
 def draw_pieces(board_array):
     """ Render pieces on the board using the 2D board array.
