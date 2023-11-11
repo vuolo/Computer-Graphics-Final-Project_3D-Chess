@@ -31,9 +31,9 @@ side_to_rotate_to = None
 invalid_move_square = None
 
 # ~ Main
-def gameplay_setup():
+def gameplay_setup(game_settings=None):
     global game, clock, highlighted_square, last_highlighted_white, last_highlighted_black
-    game = ChessGame()
+    game = ChessGame(game_settings)
     
     # Initialize pygame.
     pygame.init()

@@ -9,9 +9,9 @@ from menu.menu import init_main_menu
 from menu.menu_pause import open_pause_menu
 from graphics.graphics_3d import setup_3d_graphics, draw_graphics, cleanup_graphics
 
-def main():
+def main(game_settings=None):
     # Setup.
-    game = gameplay_setup()
+    game = gameplay_setup(game_settings)
     if "-nomenu" not in sys.argv and not SKIP_MAIN_MENU:
         init_main_menu(pygame.display.set_mode(WINDOW["display"]), game)
     setup_3d_graphics(game)
@@ -30,16 +30,24 @@ def main():
             open_pause_menu(pygame.display.set_mode(WINDOW["display"]), game)
             setup_3d_graphics(game)
             continue
+        if game.get_go_to_main_menu():
+            cleanup()
+            main(game_settings=game.get_settings())
+            return
             
         draw_graphics(delta_time, result['highlighted_square'], result['selected_square'], result['valid_move_squares'], result['invalid_move_square'])
         post_draw_gameloop()
 
+    cleanup(quitting=True)
+
+def cleanup(quitting=False):
     # Cleanup.
     cleanup_graphics()
     
     # Close the graphics window and exit the program.
-    pygame.quit()
-    quit()
+    if quitting:
+        pygame.quit()
+        quit()
 
 if __name__ == '__main__':
     main()

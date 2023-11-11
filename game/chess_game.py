@@ -4,10 +4,10 @@ from stockfish import Stockfish
 import platform
 
 # Local application imports.
-from constants import STOCKFISH_PATH_WINDOWS, STOCKFISH_PATH_LINUX, AI_OPPONENT_DEFAULT_ENABLED, AI_OPPONENT_DEFAULT_ELO
+from constants import STOCKFISH_PATH_WINDOWS, STOCKFISH_PATH_LINUX, AI_OPPONENT_DEFAULT_ENABLED, AI_OPPONENT_DEFAULT_ELO, DEFAULT_PIECE_SELECTION
 
 class ChessGame:
-    def __init__(self):
+    def __init__(self, game_settings=None):
         # Automatically detect the OS and set the appropriate path for Stockfish.
         if platform.system() == 'Windows': stockfish_path = STOCKFISH_PATH_WINDOWS
         else: stockfish_path = STOCKFISH_PATH_LINUX
@@ -20,8 +20,39 @@ class ChessGame:
         self.board = chess.Board() # (using the `python-chess` library)
         
         # AI opponent settings.
-        self.ai_opponent_enabled = AI_OPPONENT_DEFAULT_ENABLED
-        self.engine.set_skill_level(AI_OPPONENT_DEFAULT_ELO)
+        if game_settings:
+            self.ai_opponent_enabled = game_settings["ai_opponent_enabled"]
+            self.engine.set_skill_level(game_settings["ai_elo"])
+            self.piece_selection = game_settings["selected_piece"]
+        else:
+            self.ai_opponent_enabled = AI_OPPONENT_DEFAULT_ENABLED
+            self.engine.set_skill_level(AI_OPPONENT_DEFAULT_ELO)
+            self.piece_selection = DEFAULT_PIECE_SELECTION
+        
+        # Menu settings.
+        self.go_to_main_menu = False
+        
+    # ~ Settings
+    def get_settings(self):
+        return {
+            "ai_opponent_enabled": self.get_ai_opponent_enabled(),
+            "ai_elo": self.get_ai_elo(),
+            "selected_piece": self.get_piece_selection()
+        }
+    
+    # ~ Piece Selection
+    def set_piece_selection(self, piece_selection):
+        self.piece_selection = piece_selection
+        
+    def get_piece_selection(self):
+        return self.piece_selection
+        
+    # ~ Menu
+    def set_go_to_main_menu(self, go_to_main_menu):
+        self.go_to_main_menu = go_to_main_menu
+        
+    def get_go_to_main_menu(self):
+        return self.go_to_main_menu
         
     # ~ AI opponent
     def set_ai_elo(self, elo):

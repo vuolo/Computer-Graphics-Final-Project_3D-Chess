@@ -3,13 +3,10 @@ import pygame_menu
 
 # Local application imports.
 from menu.theme import menu_theme, draw_main_menu_background
-from piece_globals import game_globals
 
 
-def change_elo(selected_piece_name, selected_piece_index, game):
-    global piece_selection
-    print("Selected Piece: ", selected_piece_index)
-    game_globals.piece_selection = selected_piece_index
+def change_selected_piece(selected_piece_name, selected_piece_index, game):
+    game.set_piece_selection(selected_piece_index)
 
 def open_store_menu(surface, game):
     store_menu = pygame_menu.Menu(
@@ -22,8 +19,8 @@ def open_store_menu(surface, game):
     store_menu.add.selector(
         'Piece : \t ',
         [('Classic', 0), ('Wood', 1), ('Metal', 2)],
-        default=game_globals.piece_selection,
-        onchange=lambda value, _: change_elo(value[0], value[1], game)
+        default=game.get_piece_selection(),
+        onchange=lambda value, _: change_selected_piece(value[0], value[1], game)
     )
     
     # Add a button to return to the main menu.

@@ -23,6 +23,7 @@ MAIN_MENU_BACKGROUND_IMAGE = 'images/menu/3.png'
 SETTINGS_MENU_BACKGROUND_IMAGE = 'images/menu/4.png'
 STORE_MENU_BACKGROUND_IMAGE = 'images/menu/1.png'
 PAUSE_MENU_BACKGROUND_IMAGE = 'images/menu/2.png'
+DEFAULT_PIECE_SELECTION = 0 # 0 := classic, 1 := wood, 2 := metal
 
 # ~ Pieces
 PIECES = ["pawn", "rook", "knight", "bishop", "queen", "king"]
@@ -34,20 +35,19 @@ PIECE_ABR_DICT.update({ v: k for k, v in PIECE_ABR_DICT.items() })
 MODEL_TEMPLATE = { "obj": None, "texture": None, "vao": None, "vbo": None, "model_matrix": None }
 CHESSBOARD_OBJECT_PATH = 'models/board/board.obj'
 CHESSBOARD_TEXTURE_PATH = 'models/board/board_wood.png'
+
 SQUARE_OBJECT_PATH = 'models/square.obj'
 HIGHLIGHTED_SQUARE_TEXTURE_PATH = 'models/highlighted_square.png'
 SELECTED_SQUARE_TEXTURE_PATH = 'models/selected_square.png'
 VALID_MOVES_SQUARE_TEXTURE_PATH = 'models/valid_moves_square.png'
 INVALID_MOVE_SQUARE_TEXTURE_PATH = 'models/invalid_move_square.png'
+
 CLASSIC_PIECE_OBJECT_PATHS = { piece: f'models/pieces/classic/{piece}/{piece}.obj' for piece in PIECES }
-WOOD_PIECE_OBJECT_PATHS = { piece: f'models/pieces/wood/{piece}/{piece}.obj' for piece in PIECES }
-METAL_PIECE_OBJECT_PATHS = { piece: f'models/pieces/metal/{piece}/{piece}.obj' for piece in PIECES }
-
-
 CLASSIC_PIECE_TEXTURE_PATHS = { color: { piece: f'models/pieces/classic/{piece}/{color}.png' for piece in PIECES } for color in PIECE_COLORS }
-WOOD_PIECE_TEXTURE_PATHS = { color: { piece: f'models/pieces/metal/{piece}/{color}.png' for piece in PIECES } for color in PIECE_COLORS }
-METAL_PIECE_TEXTURE_PATHS = { color: { piece: f'models/pieces/wood/{piece}/{color}.png' for piece in PIECES } for color in PIECE_COLORS }
-
+WOOD_PIECE_OBJECT_PATHS = { piece: f'models/pieces/wood/{piece}/{piece}.obj' for piece in PIECES }
+WOOD_PIECE_TEXTURE_PATHS = { color: { piece: f'models/wood/classic/{piece}/{color}.png' for piece in PIECES } for color in PIECE_COLORS }
+METAL_PIECE_OBJECT_PATHS = { piece: f'models/pieces/metal/{piece}/{piece}.obj' for piece in PIECES }
+METAL_PIECE_TEXTURE_PATHS = { color: { piece: f'models/pieces/metal/{piece}/{color}.png' for piece in PIECES } for color in PIECE_COLORS }
 
 SKYBOX_PATH = 'skybox/set_in_space'
 
