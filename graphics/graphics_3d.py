@@ -15,7 +15,7 @@ import platform
 from graphics.graphics_2d import setup_2d_graphics
 from game.chess_game import ChessGame
 from constants import WINDOW, PIECES, PIECE_ABR_DICT, PIECE_COLORS, MODEL_TEMPLATE, CHESSBOARD_OBJECT_PATH, CHESSBOARD_TEXTURE_PATH, SKYBOX_PATH, PIECE_OBJECT_PATHS, PIECE_TEXTURE_PATHS, CAMERA_MOUSE_DRAG_SENSITIVITY, CAMERA_DEFAULT_YAW, CAMERA_DEFAULT_PITCH, CAMERA_MIN_DISTANCE, CAMERA_MAX_DISTANCE, CAMERA_DEFAULT_ANIMATION_SPEED, CAMERA_USE_INTRO_ANIMATION, MOUSE_POSITION_DELTA
-from util.animation import ease_in_out, build_intro_camera_animation_keyframes
+from util.animation import ease_in_out, build_intro_camera_animations
 from util.objLoaderV4 import ObjLoader
 from util.cubemap import load_cubemap_textures, load_texture
 from util.shaderLoaderV3 import ShaderProgram
@@ -54,8 +54,10 @@ animation_speed = CAMERA_DEFAULT_ANIMATION_SPEED
 # (Intro camera animation):
 intro_animation_started = CAMERA_USE_INTRO_ANIMATION
 intro_animation_time = 0
-intro_keyframes = build_intro_camera_animation_keyframes(yaw, pitch, camera_distance)["20"] # Change from range 1 to 23 for varying intro camera animations
+intro_keyframes = build_intro_camera_animations(yaw, pitch, camera_distance)["20"] # Change from range 1 to 23 for varying intro camera animations
 current_intro_keyframe = 0
+# (Piece animation):
+piece_animations = {}
 
 # ~ Main
 def setup_3d_graphics(new_game):
@@ -102,7 +104,7 @@ def draw_graphics(delta_time):
     
 def update_graphics(delta_time):
     global rotated_eye, camera_distance, yaw, pitch, view_matrix, projection_matrix, is_animating
-    update_camera_animation(delta_time)
+    update_animations(delta_time)
     
     # Calculate camera position using spherical coordinates.
     camera_x = camera_distance * np.sin(pitch) * np.cos(yaw)
@@ -133,6 +135,13 @@ def setup_generic_shaderProgram():
     shaderProgram["tex2D"] = 0
     shaderProgram["cubeMapTex"] = 1
     
+# ~ Animations
+def update_animations(delta_time):
+    update_camera_animation(delta_time)
+    for piece, animation in piece_animations.items():
+        if animation["is_active"]:
+            update_piece_animation(animation, delta_time)
+    
 # ~ Camera intro animation
 def start_intro_camera_animation():
     global intro_animation_time, current_intro_keyframe
@@ -143,14 +152,64 @@ def stop_intro_camera_animation():
     global intro_animation_started, current_intro_keyframe, yaw, pitch
     intro_animation_started = False
     current_intro_keyframe = len(intro_keyframes) - 1  # Set to the last keyframe.
+
+# ~ Piece animation
+def create_piece_animation(from_square, to_square, piece, start_time, duration):
+    global piece_animations
     
+    # Convert from algebraic notation to world position
+    from_world_position = calculate_world_position(from_square)
+    to_world_position = calculate_world_position(to_square)
+    
+    # Create the animation with the world positions
+    piece_animations[piece] = {
+        "start_position": from_world_position,
+        "end_position": to_world_position,
+        "current_position": from_world_position,
+        "start_time": start_time,
+        "duration": duration,
+        "piece": piece,
+        "is_active": True
+    }
+
+def update_piece_animation(animation, delta_time):
+    current_time = pygame.time.get_ticks() / 1000.0
+    progress = (current_time - animation["start_time"]) / animation["duration"]
+    if progress < 1:
+        animation["current_position"] = interpolate(animation["start_position"], animation["end_position"], progress)
+    else:
+        animation["is_active"] = False
+        animation["current_position"] = animation["end_position"]
+
+def interpolate(start_position, end_position, progress):
+    # Use easing function to interpolate
+    eased_progress = ease_in_out(progress)
+    return tuple(np.add(start_position, np.multiply(np.subtract(end_position, start_position), eased_progress)))
+
+def calculate_world_position(board_square):
+    # Assuming the chessboard is 8x8 units and centered at the origin
+    # and each square size is 1.575 units (as used in draw_piece_at_board_position).
+    square_size = 1.575
+    half_board_size = 8 / 2 * square_size
+
+    # Convert algebraic chess notation to row and column
+    file = ord(board_square[0]) - ord('a')
+    rank = 8 - int(board_square[1])
+
+    # Calculate the world position based on the row and column
+    world_x = (file - 3.5) * square_size
+    world_z = (rank - 3.5) * square_size
+    world_y = 0  # Assuming the pieces are placed at y=0
+
+    return np.array([world_x, world_y, world_z])
+
+# ~ Camera rotation animation (ease-in-out)
 def start_camera_rotation_animation(new_yaw_degrees=yaw, new_pitch_degrees=pitch):
     global target_yaw, target_pitch, is_animating
     target_yaw = np.deg2rad(new_yaw_degrees)
     target_pitch = np.deg2rad(new_pitch_degrees)
     is_animating = True
-
-# ~ Camera rotation animation (ease-in-out)
+    
 def update_camera_animation(delta_time):
     global yaw, pitch, camera_distance, intro_animation_time, current_intro_keyframe, intro_animation_started, is_animating, target_yaw, target_pitch
     
@@ -317,7 +376,8 @@ def setup_pieces():
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, pieces[color][piece]["texture"]["texture_size"]["width"], pieces[color][piece]["texture"]["texture_size"]["height"],
                          0, GL_RGB, GL_UNSIGNED_BYTE, pieces[color][piece]["texture"]["texture_pixels"])
-            
+
+
 def draw_pieces():
     # `board_array` is a 8x8 grid (2d array) of chess pieces.
     #  • Each element in the grid is either None (if there is no piece at that location) or a <Piece> object.
@@ -334,8 +394,7 @@ def draw_pieces():
     #     • BLACK_QUEEN = "q"
     #     • WHITE_KING = "K"
     #     • BLACK_KING = "k"
-    
-    global pieces, game, view_matrix, projection_matrix, rotated_eye, shaderProgram
+    global pieces, game, view_matrix, projection_matrix, rotated_eye, shaderProgram, piece_animations
     board_array = game.get_2d_board_array()
 
     # Activate the shader program.
@@ -350,40 +409,81 @@ def draw_pieces():
                 
                 # Determine the color and type of the piece.
                 color = 'white' if piece_char.isupper() else 'black'
-                piece_type = PIECE_ABR_DICT[piece_char.lower()] # Get the full name of the piece (e.g. "pawn", "knight", etc.).
+                piece_type = PIECE_ABR_DICT[piece_char.lower()]  # Get the full name of the piece (e.g., "pawn", "knight").
 
-                # Get the corresponding 3D model and shader for the piece.
+                # Get the corresponding 3D model for the piece.
                 piece_model = pieces[color][piece_type]
+                piece_model['color'] = color  # Add color attribute to piece_model for use in draw_piece_at_board_position
 
-                # Calculate the piece's model matrix based on its position on the board.
-                # piece_position = np.array([col - 3.5, 0, row - 3.5])  # Center the piece on the square.
-                offset_x, offset_z, square_size = 0, 0, 1.575
-                piece_position = np.array([
-                    (col - 3.5) * square_size + offset_x, 
-                    0, 
-                    (row - 3.5) * square_size + offset_z
-                ])
-                translation_matrix = pyrr.matrix44.create_from_translation(piece_position)
-                model_matrix = pyrr.matrix44.multiply(translation_matrix, piece_model["model_matrix"])
+                # TODO: make this functional
+                # If there's an active animation for the piece, use the current position from the animation.
+                if piece in piece_animations and piece_animations[piece]["is_active"]:
+                    draw_piece_at_position(piece_model, piece_animations[piece]["current_position"])
+                else:
+                    # Otherwise, draw the piece at its board position.
+                    draw_piece_at_board_position(piece_model, row, col)
 
-                # Send each matrix (model, view, and projection) to the piece's shader.
-                shaderProgram["model_matrix"] = model_matrix
-                shaderProgram["view_matrix"] = view_matrix
-                shaderProgram["projection_matrix"] = projection_matrix
-                shaderProgram["eye_pos"] = rotated_eye
+def draw_piece_at_position(piece_model, position):
+    global view_matrix, projection_matrix, rotated_eye, shaderProgram
 
-                # Bind the piece's texture.
-                glActiveTexture(GL_TEXTURE0)
-                glBindTexture(GL_TEXTURE_2D, piece_model["texture"]["texture_id"])
+    # Calculate the model matrix for the piece using the position.
+    translation_matrix = pyrr.matrix44.create_from_translation(position)
+    model_matrix = pyrr.matrix44.multiply(translation_matrix, piece_model["model_matrix"])
 
-                # Bind the skybox texture (for environment mapping).
-                glActiveTexture(GL_TEXTURE1)
-                glBindTexture(GL_TEXTURE_CUBE_MAP, skybox["texture_id"])
+    # Send each matrix (model, view, and projection) to the piece's shader.
+    shaderProgram["model_matrix"] = model_matrix
+    shaderProgram["view_matrix"] = view_matrix
+    shaderProgram["projection_matrix"] = projection_matrix
+    shaderProgram["eye_pos"] = rotated_eye
 
-                # Draw the piece.
-                glBindVertexArray(piece_model["vao"])
-                glDrawArrays(GL_TRIANGLES, 0, piece_model["obj"].n_vertices)
+    # Bind the piece's texture.
+    glActiveTexture(GL_TEXTURE0)
+    glBindTexture(GL_TEXTURE_2D, piece_model["texture"]["texture_id"])
 
+    # Bind the skybox texture (for environment mapping).
+    glActiveTexture(GL_TEXTURE1)
+    glBindTexture(GL_TEXTURE_CUBE_MAP, skybox["texture_id"])
+
+    # Draw the piece.
+    glBindVertexArray(piece_model["vao"])
+    glDrawArrays(GL_TRIANGLES, 0, piece_model["obj"].n_vertices)
+
+def draw_piece_at_board_position(piece_model, row, col):
+    global view_matrix, projection_matrix, rotated_eye, shaderProgram
+
+    # Calculate the piece's model matrix based on its position on the board.
+    offset_x, offset_z, square_size = 0, 0, 1.575
+    piece_position = np.array([
+        (col - 3.5) * square_size + offset_x, 
+        0, 
+        (row - 3.5) * square_size + offset_z
+    ])
+    translation_matrix = pyrr.matrix44.create_from_translation(piece_position)
+    model_matrix = pyrr.matrix44.multiply(translation_matrix, piece_model["model_matrix"])
+    
+    # Apply additional rotation to the white pieces to face the center of the board.
+    if piece_model['color'] == 'white':
+        rotation_matrix = pyrr.matrix44.create_from_y_rotation(np.radians(180))
+        model_matrix = pyrr.matrix44.multiply(rotation_matrix, model_matrix)
+
+    # Send each matrix (model, view, and projection) to the piece's shader.
+    shaderProgram["model_matrix"] = model_matrix
+    shaderProgram["view_matrix"] = view_matrix
+    shaderProgram["projection_matrix"] = projection_matrix
+    shaderProgram["eye_pos"] = rotated_eye
+
+    # Bind the piece's texture.
+    glActiveTexture(GL_TEXTURE0)
+    glBindTexture(GL_TEXTURE_2D, piece_model["texture"]["texture_id"])
+
+    # Bind the skybox texture (for environment mapping).
+    glActiveTexture(GL_TEXTURE1)
+    glBindTexture(GL_TEXTURE_CUBE_MAP, skybox["texture_id"])
+
+    # Draw the piece.
+    glBindVertexArray(piece_model["vao"])
+    glDrawArrays(GL_TRIANGLES, 0, piece_model["obj"].n_vertices)
+            
 # ~ Skybox
 def setup_skybox():
     # Load the skybox shader and texture.

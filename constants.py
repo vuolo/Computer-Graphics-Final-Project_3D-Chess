@@ -5,6 +5,7 @@ WINDOW = {
 }
 WINDOW.update({"aspect_ratio": WINDOW["width"] / WINDOW["height"]})
 WINDOW.update({"display": (WINDOW["width"], WINDOW["height"])})
+FRAME_RATE = 60 # FPS
 
 # ~ Stockfish
 STOCKFISH_PATH_WINDOWS = './stockfish/stockfish-windows-x86-64-avx2.exe'
@@ -46,7 +47,8 @@ CAMERA_MAX_DISTANCE = 5
 
 # ~ Camera animation
 CAMERA_DEFAULT_ANIMATION_SPEED = 10
-CAMERA_USE_INTRO_ANIMATION = False
+CAMERA_USE_INTRO_ANIMATION = True
+CAMERA_ANIMATE_AFTER_MOVE = True
 
 MOUSE_POSITION_DELTA = 2.1 # Delta that determines a click, in pixels
 
@@ -59,6 +61,5 @@ developers = [
 ]
 third_party_credits = """
 Third-Party Resources:
-- TODO: Resource 1: Description
-- TODO: Resource 2: Description
+- skybox.blockadelabs.com
 """
