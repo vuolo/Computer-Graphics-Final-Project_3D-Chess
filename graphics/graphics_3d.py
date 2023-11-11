@@ -114,7 +114,7 @@ def draw_graphics(delta_time, highlighted_square, valid_move_squares, selected_s
     
 def draw_highlights(highlighted_square, valid_move_squares, selected_square):
     global highlighted_square_model, selected_square_model, valid_move_square_model
-    draw_at_board_position(highlighted_square_model, 7 - highlighted_square[1], highlighted_square[0])
+    if selected_square != highlighted_square: draw_at_board_position(highlighted_square_model, 7 - highlighted_square[1], highlighted_square[0])
     if selected_square: draw_at_board_position(selected_square_model, 7 - selected_square[1], selected_square[0])
     if valid_move_squares:
         for square in valid_move_squares:

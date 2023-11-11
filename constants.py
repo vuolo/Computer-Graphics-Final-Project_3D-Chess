@@ -1,6 +1,6 @@
 # ~ Window
 WINDOW = {
-    "width": 800,
+    "width": 1200,
     "height": 800,
 }
 WINDOW.update({"aspect_ratio": WINDOW["width"] / WINDOW["height"]})
