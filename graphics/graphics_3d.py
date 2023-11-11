@@ -428,6 +428,11 @@ def draw_piece_at_position(piece_model, position):
     # Calculate the model matrix for the piece using the position.
     translation_matrix = pyrr.matrix44.create_from_translation(position)
     model_matrix = pyrr.matrix44.multiply(translation_matrix, piece_model["model_matrix"])
+    
+    # Apply additional rotation to the white pieces to face the center of the board.
+    if piece_model['color'] == 'white':
+        rotation_matrix = pyrr.matrix44.create_from_y_rotation(np.radians(180))
+        model_matrix = pyrr.matrix44.multiply(rotation_matrix, model_matrix)
 
     # Send each matrix (model, view, and projection) to the piece's shader.
     shaderProgram["model_matrix"] = model_matrix
