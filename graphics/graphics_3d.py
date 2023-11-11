@@ -69,8 +69,8 @@ def setup_3d_graphics(new_game):
     global game, shaderProgram, intro_animation_started
     game = new_game
     
-    # Reset the intro animation.
-    intro_animation_started = True
+    # Reset the intro animation (if enabled).
+    intro_animation_started = CAMERA_USE_INTRO_ANIMATION
     start_intro_camera_animation()
     
     # Set up OpenGL context's major and minor version numbers.
@@ -118,6 +118,9 @@ def draw_graphics(delta_time, highlighted_square, selected_square, valid_move_sq
     draw_pieces()
     draw_skybox()
     
+    # Draw text on top of the 3D scene.
+    # draw_text("Sample Text", WINDOW["width"] / 2, WINDOW["height"] / 2)
+    
 def draw_highlights(highlighted_square, selected_square, valid_move_squares, invalid_move_square):
     global highlighted_square_model, selected_square_model, valid_move_square_model
     if highlighted_square != selected_square and highlighted_square != invalid_move_square: draw_at_board_position(highlighted_square_model, 7 - highlighted_square[1], highlighted_square[0])
@@ -149,6 +152,14 @@ def cleanup_graphics():
     glDeleteProgram(shaderProgram.shader)
     glDeleteProgram(skybox["shaderProgram"].shader)
 
+# ~ Text
+def draw_text(text, x, y, font_size=32, color=(255, 255, 255)):
+    font = pygame.font.SysFont('arial', 64)
+    textSurface = font.render(text, True, color).convert_alpha()
+    textData = pygame.image.tostring(textSurface, "RGBA", True)
+    glWindowPos2d(x, y)
+    glDrawPixels(textSurface.get_width(), textSurface.get_height(), GL_RGBA, GL_UNSIGNED_BYTE, textData)
+    
 # ~ Shader setup
 def setup_generic_shaderProgram():
     global shaderProgram
