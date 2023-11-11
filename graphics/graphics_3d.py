@@ -15,7 +15,7 @@ import platform
 from graphics.graphics_2d import setup_2d_graphics
 from game.chess_game import ChessGame
 from graphics.animation import ease_in_out, add_shake, build_intro_camera_animations
-from constants import WINDOW, PIECES, PIECE_ABR_DICT, PIECE_COLORS, MODEL_TEMPLATE, CHESSBOARD_OBJECT_PATH, CHESSBOARD_TEXTURE_PATH, SQUARE_OBJECT_PATH, HIGHLIGHTED_SQUARE_TEXTURE_PATH, SELECTED_SQUARE_TEXTURE_PATH, VALID_MOVES_SQUARE_TEXTURE_PATH, INVALID_MOVE_SQUARE_TEXTURE_PATH, SKYBOX_PATH, CLASSIC_PIECE_OBJECT_PATHS, WOOD_PIECE_OBJECT_PATHS, METAL_PIECE_OBJECT_PATHS, CLASSIC_PIECE_TEXTURE_PATHS, WOOD_PIECE_TEXTURE_PATHS, METAL_PIECE_TEXTURE_PATHS, CAMERA_MOUSE_DRAG_SENSITIVITY, CAMERA_DEFAULT_YAW, CAMERA_DEFAULT_PITCH, CAMERA_MIN_DISTANCE, CAMERA_MAX_DISTANCE, CAMERA_DEFAULT_ANIMATION_SPEED, CAMERA_USE_INTRO_ANIMATION, MOUSE_POSITION_DELTA, CAMERA_ZOOM_SCROLL_SENSITIVITY, HUD_TEXT_MODEL_OBJECT_PATH, HUD_TEXT_EXAMPLE_TEXTURE_PATH
+from constants import WINDOW, PIECES, PIECE_ABR_DICT, PIECE_COLORS, MODEL_TEMPLATE, CHESSBOARD_OBJECT_PATH, CHESSBOARD_TEXTURE_PATH, SQUARE_OBJECT_PATH, HIGHLIGHTED_SQUARE_TEXTURE_PATH, SELECTED_SQUARE_TEXTURE_PATH, VALID_MOVES_SQUARE_TEXTURE_PATH, INVALID_MOVE_SQUARE_TEXTURE_PATH, SKYBOX_PATH,PIECE_OBJECT_PATHS, CLASSIC_PIECE_TEXTURE_PATHS, WOOD_PIECE_TEXTURE_PATHS, METAL_PIECE_TEXTURE_PATHS, CAMERA_MOUSE_DRAG_SENSITIVITY, CAMERA_DEFAULT_YAW, CAMERA_DEFAULT_PITCH, CAMERA_MIN_DISTANCE, CAMERA_MAX_DISTANCE, CAMERA_DEFAULT_ANIMATION_SPEED, CAMERA_USE_INTRO_ANIMATION, MOUSE_POSITION_DELTA, CAMERA_ZOOM_SCROLL_SENSITIVITY, HUD_TEXT_MODEL_OBJECT_PATH, HUD_TEXT_EXAMPLE_TEXTURE_PATH
 from util.cubemap import load_cubemap_textures, load_texture
 from util.game import notation_to_coords
 from util.objLoaderV4 import ObjLoader
@@ -583,12 +583,7 @@ def setup_pieces():
     for color in PIECE_COLORS:
         for piece in PIECES:
             # Load the 3D model for the piece (if the model has already been loaded for one color, it reuses that model for the other color to optimize resource usage).
-            if(game.piece_selection == 0):
-                pieces[color][piece]["obj"] = pieces['black' if color == 'white' else 'white'][piece].get("obj") or ObjLoader(CLASSIC_PIECE_OBJECT_PATHS[piece])
-            elif(game.piece_selection == 1):
-                pieces[color][piece]["obj"] = pieces['black' if color == 'white' else 'white'][piece].get("obj") or ObjLoader(WOOD_PIECE_OBJECT_PATHS[piece])
-            elif(game.piece_selection == 2):
-                pieces[color][piece]["obj"] = pieces['black' if color == 'white' else 'white'][piece].get("obj") or ObjLoader(METAL_PIECE_OBJECT_PATHS[piece])
+            pieces[color][piece]["obj"] = pieces['black' if color == 'white' else 'white'][piece].get("obj") or ObjLoader(PIECE_OBJECT_PATHS[piece])
 
             # Create a VAO and VBO for the piece.
             pieces[color][piece]["vao"] = glGenVertexArrays(1)
