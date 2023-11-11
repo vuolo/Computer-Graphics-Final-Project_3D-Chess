@@ -1,5 +1,6 @@
 import numpy as np
 import pygame
+import random
 
 # ~ Camera effects
 def ease_in_out(t):
@@ -8,10 +9,12 @@ def ease_in_out(t):
         f = ((2 * t) - 2)
         return 0.5 * f * f * f + 1
 
-def add_shake_effect(position, progress, shake_intensity, shake_frequency):
-    shake_magnitude = shake_intensity * (1 - progress)
-    offset = shake_magnitude * np.sin(pygame.time.get_ticks() * shake_frequency)
-    return position + offset
+def add_shake(position, progress, max_intensity):
+    # Interpolate the shake intensity based on progress
+    shake_intensity = ease_in_out(progress) * max_intensity
+    shake = np.random.uniform(-shake_intensity, shake_intensity, size=position.shape)
+    shake[1] = 0  # No shake on the y-axis
+    return position + shake
 
 # ~ Camera animation
 def build_intro_camera_animations(yaw, pitch, camera_distance): return {

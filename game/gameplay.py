@@ -245,6 +245,17 @@ def attempt_move_ai_opponent():
         move_sound.play()
         ai_move = game.make_ai_move()
         if ai_move:
+            # Parse the move to get from and to squares
+            from_square = chess.SQUARE_NAMES[chess.parse_square(ai_move[:2])]
+            to_square = chess.SQUARE_NAMES[chess.parse_square(ai_move[2:4])]
+            # Get the piece symbol
+            piece = game.board.piece_at(chess.parse_square(to_square))
+            piece_symbol = piece.symbol() if piece else None
+
+            # # Create the animation
+            start_time = pygame.time.get_ticks() / 1000.0
+            create_piece_animation(from_square, to_square, piece_symbol, start_time, 1.0)
+
             print(f"~ AI moved: {ai_move}")
             game.display_whos_turn()
             
