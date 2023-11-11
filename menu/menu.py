@@ -3,7 +3,7 @@ import pygame_menu
 import pygame
 
 # Local application imports.
-from menu.menu_theme import menu_theme, draw_main_menu_background
+from menu.theme import menu_theme, draw_main_menu_background
 from menu.menu_settings import open_settings_menu
 from menu.menu_store import open_store_menu
 from menu.menu_credits import open_credits_menu
@@ -48,12 +48,10 @@ def play_and_open_settings(surface, game):
     click_sound.play()
     open_settings_menu(surface, game)
 
-# Function to play click sound and open store menu
 def play_and_open_store(surface, game):
     click_sound.play()
     open_store_menu(surface, game)
 
-# Function to play click sound and open credits menu
 def play_and_open_credits(surface, game):
     click_sound.play()
     open_credits_menu(surface, game)

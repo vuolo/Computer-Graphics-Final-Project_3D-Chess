@@ -2,7 +2,7 @@
 import pygame_menu
 
 # Local application imports.
-from menu.menu_theme import menu_theme, draw_main_menu_background
+from menu.theme import menu_theme, draw_main_menu_background
 from piece_globals import game_globals
 
 

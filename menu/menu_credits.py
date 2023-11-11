@@ -3,7 +3,7 @@ import pygame_menu
 
 # Local application imports.
 from constants import developers, third_party_credits
-from menu.menu_theme import menu_theme, draw_main_menu_background
+from menu.theme import menu_theme, draw_main_menu_background
 
 def open_credits_menu(surface, game):
     credits_menu = pygame_menu.Menu(

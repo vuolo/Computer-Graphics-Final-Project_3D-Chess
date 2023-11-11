@@ -71,6 +71,8 @@ def pre_draw_gameloop():
                 valid_move_squares = None
                 is_selected = False
                 print("Selected square cleared.")
+            elif event.key == pygame.K_ESCAPE:
+                return 'pause'
                 
         elif event.type == ROTATE_CAMERA_EVENT:
             start_camera_rotation_animation(CAMERA_DEFAULT_YAW[side_to_rotate_to], CAMERA_DEFAULT_PITCH)
