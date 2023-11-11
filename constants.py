@@ -31,8 +31,10 @@ PIECE_ABR_DICT.update({ v: k for k, v in PIECE_ABR_DICT.items() })
 MODEL_TEMPLATE = { "obj": None, "texture": None, "vao": None, "vbo": None, "model_matrix": None }
 CHESSBOARD_OBJECT_PATH = 'models/board/board.obj'
 CHESSBOARD_TEXTURE_PATH = 'models/board/board.png'
-HIGHLIGHTED_SQUARE_OBJECT_PATH = 'models/highlighted_square.obj'
+SQUARE_OBJECT_PATH = 'models/square.obj'
 HIGHLIGHTED_SQUARE_TEXTURE_PATH = 'models/highlighted_square.png'
+SELECTED_SQUARE_TEXTURE_PATH = 'models/selected_square.png'
+VALID_MOVES_SQUARE_TEXTURE_PATH = 'models/valid_moves_square.png'
 PIECE_OBJECT_PATHS = { piece: f'models/pieces/{piece}/{piece}.obj' for piece in PIECES }
 PIECE_TEXTURE_PATHS = { color: { piece: f'models/pieces/{piece}/{color}.png' for piece in PIECES } for color in PIECE_COLORS }
 SKYBOX_PATH = 'skybox/set_in_space'

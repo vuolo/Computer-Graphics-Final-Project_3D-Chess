@@ -70,7 +70,6 @@ def pre_draw_gameloop():
                 print("Selected square cleared.")
                 
     handle_mouse_events(events, handle_mouse_click)
-    
     attempt_move_ai_opponent()
     
     return { 'highlighted_square': highlighted_square, 'selected_square': selected_square, 'valid_move_squares': valid_move_squares }

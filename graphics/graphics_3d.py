@@ -15,7 +15,7 @@ import platform
 from graphics.graphics_2d import setup_2d_graphics
 from game.chess_game import ChessGame
 from util.animation import ease_in_out, build_intro_camera_animations
-from constants import WINDOW, PIECES, PIECE_ABR_DICT, PIECE_COLORS, MODEL_TEMPLATE, CHESSBOARD_OBJECT_PATH, CHESSBOARD_TEXTURE_PATH, HIGHLIGHTED_SQUARE_OBJECT_PATH, HIGHLIGHTED_SQUARE_TEXTURE_PATH, SKYBOX_PATH, PIECE_OBJECT_PATHS, PIECE_TEXTURE_PATHS, CAMERA_MOUSE_DRAG_SENSITIVITY, CAMERA_DEFAULT_YAW, CAMERA_DEFAULT_PITCH, CAMERA_MIN_DISTANCE, CAMERA_MAX_DISTANCE, CAMERA_DEFAULT_ANIMATION_SPEED, CAMERA_USE_INTRO_ANIMATION, MOUSE_POSITION_DELTA
+from constants import WINDOW, PIECES, PIECE_ABR_DICT, PIECE_COLORS, MODEL_TEMPLATE, CHESSBOARD_OBJECT_PATH, CHESSBOARD_TEXTURE_PATH, SQUARE_OBJECT_PATH, HIGHLIGHTED_SQUARE_TEXTURE_PATH, SELECTED_SQUARE_TEXTURE_PATH, VALID_MOVES_SQUARE_TEXTURE_PATH, SKYBOX_PATH, PIECE_OBJECT_PATHS, PIECE_TEXTURE_PATHS, CAMERA_MOUSE_DRAG_SENSITIVITY, CAMERA_DEFAULT_YAW, CAMERA_DEFAULT_PITCH, CAMERA_MIN_DISTANCE, CAMERA_MAX_DISTANCE, CAMERA_DEFAULT_ANIMATION_SPEED, CAMERA_USE_INTRO_ANIMATION, MOUSE_POSITION_DELTA
 from util.cubemap import load_cubemap_textures, load_texture
 from util.game import notation_to_coords
 from util.objLoaderV4 import ObjLoader
@@ -25,6 +25,8 @@ from util.shaderLoaderV3 import ShaderProgram
 game: Optional['ChessGame'] = None
 chessboard: dict = MODEL_TEMPLATE.copy()
 highlighted_square_model: dict = MODEL_TEMPLATE.copy()
+selected_square_model: dict = MODEL_TEMPLATE.copy()
+valid_move_square_model: dict = MODEL_TEMPLATE.copy()
 pieces: dict = { color: { piece: MODEL_TEMPLATE.copy() for piece in PIECES } for color in PIECE_COLORS }
 skybox: dict = {}
 shaderProgram: Optional[ShaderProgram] = None
@@ -91,7 +93,7 @@ def setup_3d_graphics(new_game):
     setup_chessboard()
     setup_pieces()
     setup_skybox()
-    setup_highlighted_square()
+    setup_highlights()
     
     return screen
 
@@ -111,12 +113,12 @@ def draw_graphics(delta_time, highlighted_square, valid_move_squares, selected_s
     draw_skybox()
     
 def draw_highlights(highlighted_square, valid_move_squares, selected_square):
-    # print(f"highlighted: {highlighted_square}")
-    # print(f"selected square: {selected_square}")
-    draw_at_board_position(highlighted_square_model, highlighted_square[0], highlighted_square[1])
-    # draw_at_board_position(highlighted_square_model, selected_square[0], selected_square[1])
-    # for square in valid_move_squares:
-    #     draw_at_board_position(highlighted_square_model, square[0], square[1])
+    global highlighted_square_model, selected_square_model, valid_move_square_model
+    draw_at_board_position(highlighted_square_model, 7 - highlighted_square[1], highlighted_square[0])
+    if selected_square: draw_at_board_position(selected_square_model, 7 - selected_square[1], selected_square[0])
+    if valid_move_squares:
+        for square in valid_move_squares:
+            draw_at_board_position(valid_move_square_model, 7 - square[1], square[0])
 
 def update_graphics(delta_time):
     global rotated_eye, camera_distance, yaw, pitch, view_matrix, projection_matrix, is_animating
@@ -351,48 +353,53 @@ def draw_chessboard():
     glDrawArrays(GL_TRIANGLES, 0, chessboard["obj"].n_vertices)
 
 # ~ Highlights
-def setup_highlighted_square():
-    global highlighted_square_model
-    highlighted_square_model["obj"] = ObjLoader(HIGHLIGHTED_SQUARE_OBJECT_PATH)
+def setup_highlights():
+    global highlighted_square_model, selected_square_model, valid_move_square_model
+    setup_highlight(highlighted_square_model, HIGHLIGHTED_SQUARE_TEXTURE_PATH)
+    setup_highlight(selected_square_model, SELECTED_SQUARE_TEXTURE_PATH)
+    setup_highlight(valid_move_square_model, VALID_MOVES_SQUARE_TEXTURE_PATH)
+
+def setup_highlight(model, texture_path):
+    model["obj"] = ObjLoader(SQUARE_OBJECT_PATH)
     
     # Create a VAO and VBO for the object.
-    highlighted_square_model["vao"] = glGenVertexArrays(1)
-    highlighted_square_model["vbo"] = glGenBuffers(1)
+    model["vao"] = glGenVertexArrays(1)
+    model["vbo"] = glGenBuffers(1)
     
     # Upload the object's model data to the GPU.
-    glBindVertexArray(highlighted_square_model["vao"])
-    glBindBuffer(GL_ARRAY_BUFFER, highlighted_square_model["vbo"])
-    glBufferData(GL_ARRAY_BUFFER, highlighted_square_model["obj"].vertices, GL_STATIC_DRAW)
+    glBindVertexArray(model["vao"])
+    glBindBuffer(GL_ARRAY_BUFFER, model["vbo"])
+    glBufferData(GL_ARRAY_BUFFER, model["obj"].vertices, GL_STATIC_DRAW)
     
     # Configure the vertex attributes for the object (position, normal, and uv).
     position_loc, normal_loc, uv_loc = 0, 1, 2
-    glVertexAttribPointer(position_loc, highlighted_square_model["obj"].size_position, GL_FLOAT,
-                          GL_FALSE, highlighted_square_model["obj"].stride, ctypes.c_void_p(highlighted_square_model["obj"].offset_position))
-    glVertexAttribPointer(normal_loc, highlighted_square_model["obj"].size_normal, GL_FLOAT,
-                          GL_FALSE, highlighted_square_model["obj"].stride, ctypes.c_void_p(highlighted_square_model["obj"].offset_normal))
-    glVertexAttribPointer(uv_loc, highlighted_square_model["obj"].size_texture, GL_FLOAT,
-                          GL_FALSE, highlighted_square_model["obj"].stride, ctypes.c_void_p(highlighted_square_model["obj"].offset_texture))
+    glVertexAttribPointer(position_loc, model["obj"].size_position, GL_FLOAT,
+                          GL_FALSE, model["obj"].stride, ctypes.c_void_p(model["obj"].offset_position))
+    glVertexAttribPointer(normal_loc, model["obj"].size_normal, GL_FLOAT,
+                          GL_FALSE, model["obj"].stride, ctypes.c_void_p(model["obj"].offset_normal))
+    glVertexAttribPointer(uv_loc, model["obj"].size_texture, GL_FLOAT,
+                          GL_FALSE, model["obj"].stride, ctypes.c_void_p(model["obj"].offset_texture))
     glEnableVertexAttribArray(position_loc)
     glEnableVertexAttribArray(normal_loc)
     glEnableVertexAttribArray(uv_loc)
     
     # Create a 4x4 model matrix (to transform the object from model space to world space) for the object.
-    scale_factor = 2 / highlighted_square_model["obj"].dia * 0.1 # Scale the highlighted square down to fit on the chessboard squares properly.
-    translation_matrix = pyrr.matrix44.create_from_translation(-highlighted_square_model["obj"].center)
+    scale_factor = 2 / model["obj"].dia * 0.1 # Scale the highlighted square down to fit on the chessboard squares properly.
+    translation_matrix = pyrr.matrix44.create_from_translation(-model["obj"].center)
     scale_matrix = pyrr.matrix44.create_from_scale([scale_factor, scale_factor, scale_factor])
-    highlighted_square_model["model_matrix"] = pyrr.matrix44.multiply(translation_matrix, scale_matrix)
+    model["model_matrix"] = pyrr.matrix44.multiply(translation_matrix, scale_matrix)
     
     # Load the object's texture.
-    highlighted_square_model["texture"] = {}
-    highlighted_square_model["texture"]["texture_pixels"], highlighted_square_model["texture"]["texture_size"] = load_texture(HIGHLIGHTED_SQUARE_TEXTURE_PATH, flip=True)
-    highlighted_square_model["texture"]["texture_id"] = glGenTextures(1)
-    glBindTexture(GL_TEXTURE_2D, highlighted_square_model["texture"]["texture_id"])
+    model["texture"] = {}
+    model["texture"]["texture_pixels"], model["texture"]["texture_size"] = load_texture(texture_path, flip=True)
+    model["texture"]["texture_id"] = glGenTextures(1)
+    glBindTexture(GL_TEXTURE_2D, model["texture"]["texture_id"])
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, highlighted_square_model["texture"]["texture_size"]["width"], highlighted_square_model["texture"]["texture_size"]["height"],
-                 0, GL_RGB, GL_UNSIGNED_BYTE, highlighted_square_model["texture"]["texture_pixels"])
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, model["texture"]["texture_size"]["width"], model["texture"]["texture_size"]["height"],
+                 0, GL_RGB, GL_UNSIGNED_BYTE, model["texture"]["texture_pixels"])
 
 # ~ Pieces
 def setup_pieces():
