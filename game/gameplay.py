@@ -45,7 +45,7 @@ def gameplay_setup():
 
 # ~ Game loop
 def pre_draw_gameloop():
-    global clock, highlighted_square, is_selected, mouse_click_detected
+    global clock, highlighted_square, selected_square, valid_move_squares, is_selected, mouse_click_detected
     clock.tick(FRAME_RATE)
     events = pygame.event.get()
     
@@ -72,6 +72,8 @@ def pre_draw_gameloop():
     handle_mouse_events(events, handle_mouse_click)
     
     attempt_move_ai_opponent()
+    
+    return { 'highlighted_square': highlighted_square, 'selected_square': selected_square, 'valid_move_squares': valid_move_squares }
 
 def post_draw_gameloop():
     # Display endgame message if the game is over.

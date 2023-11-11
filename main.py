@@ -23,8 +23,9 @@ def main():
         delta_time = (current_time - last_time) / 1000.0  # Convert milliseconds to seconds
         last_time = current_time
         
-        if pre_draw_gameloop() == 'quit': break
-        draw_graphics(delta_time)
+        result = pre_draw_gameloop()
+        if result == 'quit': break
+        draw_graphics(delta_time, result['highlighted_square'], result['valid_move_squares'], result['selected_square'])
         post_draw_gameloop()
 
     # Cleanup.
