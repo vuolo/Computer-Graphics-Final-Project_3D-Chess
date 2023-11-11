@@ -9,7 +9,7 @@ import chess
 from constants import WINDOW, FRAME_RATE, CAMERA_ANIMATE_AFTER_MOVE
 from game.chess_game import ChessGame
 # from graphics.graphics_2d import pixel_to_board_coords, board_coords_to_notation, display_endgame_message, display_turn_indicator
-from graphics.graphics_3d import handle_mouse_events, rotate_camera_to_side, get_ray_from_mouse, intersect_ray_with_plane, determine_square_from_intersection, create_piece_animation
+from graphics.graphics_3d import handle_mouse_events, rotate_camera_to_side, create_piece_animation#, get_ray_from_mouse, intersect_ray_with_plane, determine_square_from_intersection
 from util.game import notation_to_coords
 
 pygame.mixer.init()
