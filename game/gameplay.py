@@ -6,10 +6,10 @@ import pygame
 import chess
 
 # Local application imports.
-from constants import WINDOW, FRAME_RATE, CAMERA_ANIMATE_AFTER_MOVE
+from constants import WINDOW, FRAME_RATE, CAMERA_DEFAULT_YAW, CAMERA_DEFAULT_PITCH, CAMERA_ANIMATE_AFTER_MOVE, CAMERA_ANIMATE_AFTER_MOVE_DELAY, ROTATE_CAMERA_EVENT, DISABLE_INVALID_MOVE_SQUARE_EVENT, INVALID_MOVE_SQUARE_FLASH_DURATION
 from game.chess_game import ChessGame
 # from graphics.graphics_2d import pixel_to_board_coords, board_coords_to_notation, display_endgame_message, display_turn_indicator
-from graphics.graphics_3d import handle_mouse_events, rotate_camera_to_side, create_piece_animation#, get_ray_from_mouse, intersect_ray_with_plane, determine_square_from_intersection
+from graphics.graphics_3d import handle_mouse_events, create_piece_animation, start_camera_rotation_animation #, get_ray_from_mouse, intersect_ray_with_plane, determine_square_from_intersection
 from util.game import notation_to_coords
 
 pygame.mixer.init()
@@ -25,7 +25,8 @@ last_highlighted_black: Tuple[int, int] = notation_to_coords('e7')
 is_selected: bool = False  # State to track if a square is selected
 mouse_click_detected: bool = False
 move_sound = pygame.mixer.Sound('./sounds/move.mp3')
-
+side_to_rotate_to = None
+invalid_move_square = None
 
 # ~ Main
 def gameplay_setup():
@@ -45,7 +46,7 @@ def gameplay_setup():
 
 # ~ Game loop
 def pre_draw_gameloop():
-    global clock, highlighted_square, selected_square, valid_move_squares, is_selected, mouse_click_detected
+    global clock, highlighted_square, selected_square, valid_move_squares, is_selected, mouse_click_detected, invalid_move_square
     clock.tick(FRAME_RATE)
     events = pygame.event.get()
     
@@ -69,10 +70,17 @@ def pre_draw_gameloop():
                 is_selected = False
                 print("Selected square cleared.")
                 
+        elif event.type == ROTATE_CAMERA_EVENT:
+            start_camera_rotation_animation(CAMERA_DEFAULT_YAW[side_to_rotate_to], CAMERA_DEFAULT_PITCH)
+            
+        elif event.type == DISABLE_INVALID_MOVE_SQUARE_EVENT:
+            invalid_move_square = None
+
+                
     handle_mouse_events(events, handle_mouse_click)
     attempt_move_ai_opponent()
     
-    return { 'highlighted_square': highlighted_square, 'selected_square': selected_square, 'valid_move_squares': valid_move_squares }
+    return { 'highlighted_square': highlighted_square, 'selected_square': selected_square, 'valid_move_squares': valid_move_squares, 'invalid_move_square': invalid_move_square }
 
 def post_draw_gameloop():
     # Display endgame message if the game is over.
@@ -85,6 +93,16 @@ def post_draw_gameloop():
     # Draw everything to the screen.
     pygame.display.flip()
     pygame.time.wait(10)
+
+def rotate_camera_to_side(side):
+    global side_to_rotate_to
+    side_to_rotate_to = side
+    pygame.time.set_timer(ROTATE_CAMERA_EVENT, CAMERA_ANIMATE_AFTER_MOVE_DELAY, 1)
+    
+def set_invalid_move_square(square):
+    global invalid_move_square
+    invalid_move_square = square
+    pygame.time.set_timer(DISABLE_INVALID_MOVE_SQUARE_EVENT, INVALID_MOVE_SQUARE_FLASH_DURATION, 1)
 
 # ~ Click detection (for 2D graphics)
 # def handle_mouse_click_2d(events):
@@ -99,8 +117,8 @@ def post_draw_gameloop():
 
 # ~ TODO: Click detection (for 3D graphics)
 def handle_mouse_click(x, y): 
-    print(f"Accessed handle_mouse_click with: {x}, {y}")
-    
+    # print(f"Accessed handle_mouse_click with: {x}, {y}")
+    pass
 
 # def handle_mouse_click(events):
 #     global selected_square, valid_move_squares
@@ -170,6 +188,7 @@ def process_move(target_square: Tuple[int, int]):
             post_successful_move_processing(move, target_square)
         else:
             print(f"Invalid move: {move}")
+            set_invalid_move_square(target_square)
     
     selected_square = None
     valid_move_squares = None
@@ -212,7 +231,9 @@ def select_square(square_to_select: Tuple[int, int]):
         valid_moves = game.get_valid_moves(from_square_name)
         valid_move_squares = [(file, rank) for file, rank in valid_moves]
         print(f"Selected square: {from_square_name}")
-    else: print(f"Cannot select this square. {'Not your piece' if piece else 'Select a piece'}.")
+    else:
+        print(f"Cannot select this square. {'Not your piece' if piece else 'Select a piece'}.")
+        set_invalid_move_square(square_to_select)
     
     # Save the highlighted square for the current player.
     if game.get_whos_turn() == "white": last_highlighted_white = square_to_select

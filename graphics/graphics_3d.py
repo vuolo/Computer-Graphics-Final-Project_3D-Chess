@@ -15,7 +15,7 @@ import platform
 from graphics.graphics_2d import setup_2d_graphics
 from game.chess_game import ChessGame
 from util.animation import ease_in_out, build_intro_camera_animations
-from constants import WINDOW, PIECES, PIECE_ABR_DICT, PIECE_COLORS, MODEL_TEMPLATE, CHESSBOARD_OBJECT_PATH, CHESSBOARD_TEXTURE_PATH, SQUARE_OBJECT_PATH, HIGHLIGHTED_SQUARE_TEXTURE_PATH, SELECTED_SQUARE_TEXTURE_PATH, VALID_MOVES_SQUARE_TEXTURE_PATH, SKYBOX_PATH, PIECE_OBJECT_PATHS, PIECE_TEXTURE_PATHS, CAMERA_MOUSE_DRAG_SENSITIVITY, CAMERA_DEFAULT_YAW, CAMERA_DEFAULT_PITCH, CAMERA_MIN_DISTANCE, CAMERA_MAX_DISTANCE, CAMERA_DEFAULT_ANIMATION_SPEED, CAMERA_USE_INTRO_ANIMATION, MOUSE_POSITION_DELTA, CAMERA_ZOOM_SCROLL_SENSITIVITY
+from constants import WINDOW, PIECES, PIECE_ABR_DICT, PIECE_COLORS, MODEL_TEMPLATE, CHESSBOARD_OBJECT_PATH, CHESSBOARD_TEXTURE_PATH, SQUARE_OBJECT_PATH, HIGHLIGHTED_SQUARE_TEXTURE_PATH, SELECTED_SQUARE_TEXTURE_PATH, VALID_MOVES_SQUARE_TEXTURE_PATH, INVALID_MOVE_SQUARE_TEXTURE_PATH, SKYBOX_PATH, PIECE_OBJECT_PATHS, PIECE_TEXTURE_PATHS, CAMERA_MOUSE_DRAG_SENSITIVITY, CAMERA_DEFAULT_YAW, CAMERA_DEFAULT_PITCH, CAMERA_MIN_DISTANCE, CAMERA_MAX_DISTANCE, CAMERA_DEFAULT_ANIMATION_SPEED, CAMERA_USE_INTRO_ANIMATION, MOUSE_POSITION_DELTA, CAMERA_ZOOM_SCROLL_SENSITIVITY
 from util.cubemap import load_cubemap_textures, load_texture
 from util.game import notation_to_coords
 from util.objLoaderV4 import ObjLoader
@@ -27,6 +27,7 @@ chessboard: dict = MODEL_TEMPLATE.copy()
 highlighted_square_model: dict = MODEL_TEMPLATE.copy()
 selected_square_model: dict = MODEL_TEMPLATE.copy()
 valid_move_square_model: dict = MODEL_TEMPLATE.copy()
+invalid_move_square_model: dict = MODEL_TEMPLATE.copy()
 pieces: dict = { color: { piece: MODEL_TEMPLATE.copy() for piece in PIECES } for color in PIECE_COLORS }
 skybox: dict = {}
 shaderProgram: Optional[ShaderProgram] = None
@@ -40,7 +41,7 @@ target = np.array([0, 0, 0])  # Make the camera look at (target) the origin.
 up = np.array([0, 1, 0]) # Make the camera's "up" direction the positive y-axis.
 near_plane = 0.1
 far_plane = 15
-fov = 75
+fov = 45
 # (Mouse dragging - rotate around the board - uses yaw/pitch instead of angleX/angleY):
 is_dragging = False
 last_mouse_pos: Tuple[int, int] = (0, 0)
@@ -49,7 +50,6 @@ yaw: float = np.deg2rad(CAMERA_DEFAULT_YAW["white"])
 pitch: float = np.deg2rad(CAMERA_DEFAULT_PITCH)
 # (Mouse scrolling - zoom in/out - uses camera_distance to adjust the distance of the camera from the target):
 camera_distance: float = np.linalg.norm(eye)
-# TODO: move these animations to a separate file
 # (Camera-pan animation):
 target_yaw = yaw
 target_pitch = pitch
@@ -98,7 +98,7 @@ def setup_3d_graphics(new_game):
     return screen
 
 # ~ Graphics
-def draw_graphics(delta_time, highlighted_square, valid_move_squares, selected_square):
+def draw_graphics(delta_time, highlighted_square, selected_square, valid_move_squares, invalid_move_square):
     global intro_animation_started
     if not intro_animation_started: update_camera_animation(delta_time)
     
@@ -108,17 +108,18 @@ def draw_graphics(delta_time, highlighted_square, valid_move_squares, selected_s
     # Draw the 3D scene.
     update_graphics(delta_time)
     draw_chessboard()
-    draw_highlights(highlighted_square, valid_move_squares, selected_square)
+    draw_highlights(highlighted_square, selected_square, valid_move_squares, invalid_move_square)
     draw_pieces()
     draw_skybox()
     
-def draw_highlights(highlighted_square, valid_move_squares, selected_square):
+def draw_highlights(highlighted_square, selected_square, valid_move_squares, invalid_move_square):
     global highlighted_square_model, selected_square_model, valid_move_square_model
-    if selected_square != highlighted_square: draw_at_board_position(highlighted_square_model, 7 - highlighted_square[1], highlighted_square[0])
+    if highlighted_square != selected_square and highlighted_square != invalid_move_square: draw_at_board_position(highlighted_square_model, 7 - highlighted_square[1], highlighted_square[0])
     if selected_square: draw_at_board_position(selected_square_model, 7 - selected_square[1], selected_square[0])
     if valid_move_squares:
         for square in valid_move_squares:
             draw_at_board_position(valid_move_square_model, 7 - square[1], square[0])
+    if invalid_move_square: draw_at_board_position(invalid_move_square_model, 7 - invalid_move_square[1], invalid_move_square[0])
 
 def update_graphics(delta_time):
     global rotated_eye, camera_distance, yaw, pitch, view_matrix, projection_matrix, is_animating
@@ -282,8 +283,9 @@ def update_camera_animation(delta_time):
 def rotate_camera_to_side(side):
     ''' Rotate the camera to view the board from a given side. '''
     global intro_animation_started
-    if intro_animation_started: stop_intro_camera_animation() # If the intro animation is in progress, stop it before starting a new one.
+    # if intro_animation_started: stop_intro_camera_animation() # If the intro animation is in progress, stop it before starting a new one.
     
+    # Wait 1 second before starting the camera animation (we wait for the `piece_animation` to finish).
     start_camera_rotation_animation(CAMERA_DEFAULT_YAW[side], CAMERA_DEFAULT_PITCH)
 
 # ~ Chessboard
@@ -354,10 +356,11 @@ def draw_chessboard():
 
 # ~ Highlights
 def setup_highlights():
-    global highlighted_square_model, selected_square_model, valid_move_square_model
+    global highlighted_square_model, selected_square_model, valid_move_square_model, invalid_move_square_model
     setup_highlight(highlighted_square_model, HIGHLIGHTED_SQUARE_TEXTURE_PATH)
     setup_highlight(selected_square_model, SELECTED_SQUARE_TEXTURE_PATH)
     setup_highlight(valid_move_square_model, VALID_MOVES_SQUARE_TEXTURE_PATH)
+    setup_highlight(invalid_move_square_model, INVALID_MOVE_SQUARE_TEXTURE_PATH)
 
 def setup_highlight(model, texture_path):
     model["obj"] = ObjLoader(SQUARE_OBJECT_PATH)

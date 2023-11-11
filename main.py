@@ -25,7 +25,7 @@ def main():
         
         result = pre_draw_gameloop()
         if result == 'quit': break
-        draw_graphics(delta_time, result['highlighted_square'], result['valid_move_squares'], result['selected_square'])
+        draw_graphics(delta_time, result['highlighted_square'], result['selected_square'], result['valid_move_squares'], result['invalid_move_square'])
         post_draw_gameloop()
 
     # Cleanup.
