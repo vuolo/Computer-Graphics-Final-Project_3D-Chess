@@ -138,7 +138,7 @@ def setup_generic_shaderProgram():
 # ~ Animations
 def update_animations(delta_time):
     update_camera_animation(delta_time)
-    for piece, animation in piece_animations.items():
+    for initial_piece_location, animation in piece_animations.items():
         if animation["is_active"]:
             update_piece_animation(animation, delta_time)
     
@@ -157,18 +157,19 @@ def stop_intro_camera_animation():
 def create_piece_animation(from_square, to_square, piece, start_time, duration):
     global piece_animations
     
-    # Convert from algebraic notation to world position
+    # Use the starting square as the unique key for the animation
     from_world_position = calculate_world_position(from_square)
     to_world_position = calculate_world_position(to_square)
     
-    # Create the animation with the world positions
-    piece_animations[piece] = {
+    piece_animations[to_square] = {
         "start_position": from_world_position,
         "end_position": to_world_position,
         "current_position": from_world_position,
         "start_time": start_time,
         "duration": duration,
         "piece": piece,
+        "from_square": from_square,
+        "to_square": to_square,
         "is_active": True
     }
 
@@ -400,27 +401,25 @@ def draw_pieces():
     # Activate the shader program.
     glUseProgram(shaderProgram.shader)
     
-    # Iterate over the 8x8 chessboard grid.
-    for row in range(8):
-        for col in range(8):
+    # Iterate over the 8x8 chessboard grid, starting from the bottom-right corner (a1).
+    for row in range(7, -1, -1):  # 7 corresponds to '1' in chess notation, and 0 corresponds to '8'
+        for col in range(8):  # 0 corresponds to 'a' in chess notation, and 7 corresponds to 'h'
             piece = board_array[row][col]
             if piece:
-                piece_char = piece.value
-                
                 # Determine the color and type of the piece.
-                color = 'white' if piece_char.isupper() else 'black'
-                piece_type = PIECE_ABR_DICT[piece_char.lower()]  # Get the full name of the piece (e.g., "pawn", "knight").
-
-                # Get the corresponding 3D model for the piece.
+                color = 'white' if piece.value.isupper() else 'black'
+                piece_type = PIECE_ABR_DICT[piece.value.lower()]
                 piece_model = pieces[color][piece_type]
-                piece_model['color'] = color  # Add color attribute to piece_model for use in draw_piece_at_board_position
+                piece_model['color'] = color
 
-                # TODO: make this functional
-                # If there's an active animation for the piece, use the current position from the animation.
-                if piece in piece_animations and piece_animations[piece]["is_active"]:
-                    draw_piece_at_position(piece_model, piece_animations[piece]["current_position"])
+                # Determine the square name (e.g., 'e2')
+                square_name = chr(col + ord('a')) + str(8 - row)
+
+                # Check if there's an active animation for the piece on this square.
+                if square_name in piece_animations and piece_animations[square_name]["is_active"]:
+                    animation = piece_animations[square_name]
+                    draw_piece_at_position(piece_model, animation["current_position"])
                 else:
-                    # Otherwise, draw the piece at its board position.
                     draw_piece_at_board_position(piece_model, row, col)
 
 def draw_piece_at_position(piece_model, position):

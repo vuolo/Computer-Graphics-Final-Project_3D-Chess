@@ -149,25 +149,27 @@ def move_highlighted_square(direction: str) -> Tuple[int, int]:
 def user_move_sound(move, target_square):
     move_sound.play()
     post_successful_move_processing(move, target_square)
-
+    
 def process_move(target_square: Tuple[int, int]):
     global selected_square, valid_move_squares
     
     if selected_square:
-        # Convert indices to algebraic notation
         from_square_name = chess.SQUARE_NAMES[selected_square[1] * 8 + selected_square[0]]
         to_square_name = chess.SQUARE_NAMES[target_square[1] * 8 + target_square[0]]
-
         move = f"{from_square_name}{to_square_name}"
+
+        # Capture the piece object before making the move
+        piece = game.board.piece_at(chess.parse_square(from_square_name))
+        piece_symbol = piece.symbol() if piece else None
+
         if game.make_move(move):
-            # Create an animation for the moving piece
-            piece = game.board.piece_at(chess.parse_square(from_square_name))
+            # Use the captured piece object for the animation
             start_time = pygame.time.get_ticks() / 1000.0
-            create_piece_animation(from_square_name, to_square_name, piece, start_time, 1.0)
+            create_piece_animation(from_square_name, to_square_name, piece_symbol, start_time, 1.0)
             post_successful_move_processing(move, target_square)
         else:
             print(f"Invalid move: {move}")
-            
+    
     selected_square = None
     valid_move_squares = None
     
