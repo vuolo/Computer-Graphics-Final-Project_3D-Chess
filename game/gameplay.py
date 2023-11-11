@@ -4,9 +4,10 @@ from pygame.locals import *
 import numpy as np
 import pygame
 import chess
+import math
 
 # Local application imports.
-from constants import WINDOW, FRAME_RATE, CAMERA_DEFAULT_YAW, CAMERA_DEFAULT_PITCH, CAMERA_ANIMATE_AFTER_MOVE, CAMERA_ANIMATE_AFTER_MOVE_DELAY, ROTATE_CAMERA_EVENT, DISABLE_INVALID_MOVE_SQUARE_EVENT, INVALID_MOVE_SQUARE_FLASH_DURATION
+from constants import WINDOW, FRAME_RATE, PIECE_ANIMATION_DURATION, CAMERA_DEFAULT_YAW, CAMERA_DEFAULT_PITCH, CAMERA_ANIMATE_AFTER_MOVE, CAMERA_ANIMATE_AFTER_MOVE_DELAY, ROTATE_CAMERA_EVENT, DISABLE_INVALID_MOVE_SQUARE_EVENT, INVALID_MOVE_SQUARE_FLASH_DURATION, DELAYED_MOVE_SOUND_EVENT
 from game.chess_game import ChessGame
 # from graphics.graphics_2d import pixel_to_board_coords, board_coords_to_notation, display_endgame_message, display_turn_indicator
 from graphics.graphics_3d import handle_mouse_events, create_piece_animation, start_camera_rotation_animation #, get_ray_from_mouse, intersect_ray_with_plane, determine_square_from_intersection
@@ -54,13 +55,13 @@ def pre_draw_gameloop():
         if event.type == pygame.QUIT:
             return 'quit'
         
-        # Use the keyboard to move the highlighted square (WASD/↑←↓→ for movement, SPACEBAR for selection).
+        # Use the keyboard to move the highlighted square (WASD/↑←↓→ for movement, SPACEBAR/ENTER for selection, BACKSPACE for undo selection).
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_w or event.key == pygame.K_UP: highlighted_square = move_highlighted_square('up')
             elif event.key == pygame.K_s or event.key == pygame.K_DOWN: highlighted_square = move_highlighted_square('down')
             elif event.key == pygame.K_a or event.key == pygame.K_LEFT: highlighted_square = move_highlighted_square('left')
             elif event.key == pygame.K_d or event.key == pygame.K_RIGHT: highlighted_square = move_highlighted_square('right')
-            elif event.key == pygame.K_SPACE:
+            elif event.key == pygame.K_SPACE or event.key == pygame.K_RETURN:
                 if is_selected: process_move(highlighted_square)
                 else: select_square(highlighted_square)
                 is_selected = not is_selected
@@ -76,6 +77,8 @@ def pre_draw_gameloop():
         elif event.type == DISABLE_INVALID_MOVE_SQUARE_EVENT:
             invalid_move_square = None
 
+        elif event.type == DELAYED_MOVE_SOUND_EVENT:
+            move_sound.play()
                 
     handle_mouse_events(events, handle_mouse_click)
     attempt_move_ai_opponent()
@@ -164,10 +167,6 @@ def move_highlighted_square(direction: str) -> Tuple[int, int]:
     if highlighted_square != (file, rank): print(f"Highlighted square: {chess.SQUARE_NAMES[rank * 8 + file]}")
 
     return (file, rank)
-
-def user_move_sound(move, target_square):
-    move_sound.play()
-    post_successful_move_processing(move, target_square)
     
 def process_move(target_square: Tuple[int, int]):
     global selected_square, valid_move_squares
@@ -184,7 +183,7 @@ def process_move(target_square: Tuple[int, int]):
         if game.make_move(move):
             # Use the captured piece object for the animation
             start_time = pygame.time.get_ticks() / 1000.0
-            create_piece_animation(from_square_name, to_square_name, piece_symbol, start_time, 1.0)
+            create_piece_animation(from_square_name, to_square_name, piece_symbol, start_time, PIECE_ANIMATION_DURATION)
             post_successful_move_processing(move, target_square)
         else:
             print(f"Invalid move: {move}")
@@ -199,6 +198,7 @@ def post_successful_move_processing(move=None, target_square=None):
     print(f"~ You moved: {move}")
     is_selected = False
     game.display_whos_turn()
+    pygame.time.set_timer(DELAYED_MOVE_SOUND_EVENT, int(math.floor(PIECE_ANIMATION_DURATION * 1000)), 1)
     
     if game.get_ai_opponent_enabled(): return
     if CAMERA_ANIMATE_AFTER_MOVE: rotate_camera_to_side(game.get_whos_turn())
@@ -210,6 +210,7 @@ def post_successful_move_processing(move=None, target_square=None):
     else:
         last_highlighted_black = target_square
         highlighted_square = last_highlighted_white
+
         
 
 def select_square(square_to_select: Tuple[int, int]):
@@ -242,7 +243,7 @@ def select_square(square_to_select: Tuple[int, int]):
 # ~ AI opponent
 def attempt_move_ai_opponent():
     if game.ai_opponent_enabled and game.board.turn == chess.BLACK:
-        move_sound.play()
+        pygame.time.set_timer(DELAYED_MOVE_SOUND_EVENT, int(math.floor(PIECE_ANIMATION_DURATION * 1000)), 1)
         ai_move = game.make_ai_move()
         if ai_move:
             # Parse the move to get from and to squares
@@ -254,7 +255,7 @@ def attempt_move_ai_opponent():
 
             # # Create the animation
             start_time = pygame.time.get_ticks() / 1000.0
-            create_piece_animation(from_square, to_square, piece_symbol, start_time, 1.0)
+            create_piece_animation(from_square, to_square, piece_symbol, start_time, PIECE_ANIMATION_DURATION)
 
             print(f"~ AI moved: {ai_move}")
             game.display_whos_turn()

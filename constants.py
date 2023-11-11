@@ -3,7 +3,7 @@ from pygame.locals import *
 # ~ Window
 WINDOW = {
     "width": 1200,
-    "height": 800,
+    "height": 1000,
 }
 WINDOW.update({"aspect_ratio": WINDOW["width"] / WINDOW["height"]})
 WINDOW.update({"display": (WINDOW["width"], WINDOW["height"])})
@@ -59,9 +59,13 @@ CAMERA_USE_INTRO_ANIMATION = True
 CAMERA_ANIMATE_AFTER_MOVE = True
 CAMERA_ANIMATE_AFTER_MOVE_DELAY = 1200 # ms
 
+# ~ Piece animation
+PIECE_ANIMATION_DURATION = 1.0 # seconds
+
 # ~ Custom pygame events
 ROTATE_CAMERA_EVENT = USEREVENT + 1
 DISABLE_INVALID_MOVE_SQUARE_EVENT = USEREVENT + 2
+DELAYED_MOVE_SOUND_EVENT = USEREVENT + 3
 
 INVALID_MOVE_SQUARE_FLASH_DURATION = 500 # ms
 MOUSE_POSITION_DELTA = 2.1 # Delta that determines a click, in pixels

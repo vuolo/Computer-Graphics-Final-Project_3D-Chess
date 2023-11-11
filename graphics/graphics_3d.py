@@ -14,7 +14,7 @@ import platform
 # Local application imports.
 from graphics.graphics_2d import setup_2d_graphics
 from game.chess_game import ChessGame
-from util.animation import ease_in_out, add_shake, build_intro_camera_animations
+from graphics.animation import ease_in_out, add_shake, build_intro_camera_animations
 from constants import WINDOW, PIECES, PIECE_ABR_DICT, PIECE_COLORS, MODEL_TEMPLATE, CHESSBOARD_OBJECT_PATH, CHESSBOARD_TEXTURE_PATH, SQUARE_OBJECT_PATH, HIGHLIGHTED_SQUARE_TEXTURE_PATH, SELECTED_SQUARE_TEXTURE_PATH, VALID_MOVES_SQUARE_TEXTURE_PATH, INVALID_MOVE_SQUARE_TEXTURE_PATH, SKYBOX_PATH, PIECE_OBJECT_PATHS, PIECE_TEXTURE_PATHS, CAMERA_MOUSE_DRAG_SENSITIVITY, CAMERA_DEFAULT_YAW, CAMERA_DEFAULT_PITCH, CAMERA_MIN_DISTANCE, CAMERA_MAX_DISTANCE, CAMERA_DEFAULT_ANIMATION_SPEED, CAMERA_USE_INTRO_ANIMATION, MOUSE_POSITION_DELTA, CAMERA_ZOOM_SCROLL_SENSITIVITY
 from util.cubemap import load_cubemap_textures, load_texture
 from util.game import notation_to_coords
