@@ -15,11 +15,13 @@ import platform
 from graphics.graphics_2d import setup_2d_graphics
 from game.chess_game import ChessGame
 from graphics.animation import ease_in_out, add_shake, build_intro_camera_animations
-from constants import WINDOW, PIECES, PIECE_ABR_DICT, PIECE_COLORS, MODEL_TEMPLATE, CHESSBOARD_OBJECT_PATH, CHESSBOARD_TEXTURE_PATH, SQUARE_OBJECT_PATH, HIGHLIGHTED_SQUARE_TEXTURE_PATH, SELECTED_SQUARE_TEXTURE_PATH, VALID_MOVES_SQUARE_TEXTURE_PATH, INVALID_MOVE_SQUARE_TEXTURE_PATH, SKYBOX_PATH, PIECE_OBJECT_PATHS, PIECE_TEXTURE_PATHS, CAMERA_MOUSE_DRAG_SENSITIVITY, CAMERA_DEFAULT_YAW, CAMERA_DEFAULT_PITCH, CAMERA_MIN_DISTANCE, CAMERA_MAX_DISTANCE, CAMERA_DEFAULT_ANIMATION_SPEED, CAMERA_USE_INTRO_ANIMATION, MOUSE_POSITION_DELTA, CAMERA_ZOOM_SCROLL_SENSITIVITY
+from constants import WINDOW, PIECES, PIECE_ABR_DICT, PIECE_COLORS, MODEL_TEMPLATE, CHESSBOARD_OBJECT_PATH, CHESSBOARD_TEXTURE_PATH, SQUARE_OBJECT_PATH, HIGHLIGHTED_SQUARE_TEXTURE_PATH, SELECTED_SQUARE_TEXTURE_PATH, VALID_MOVES_SQUARE_TEXTURE_PATH, INVALID_MOVE_SQUARE_TEXTURE_PATH, SKYBOX_PATH, CLASSIC_PIECE_OBJECT_PATHS, WOOD_PIECE_OBJECT_PATHS, METAL_PIECE_OBJECT_PATHS, CLASSIC_PIECE_TEXTURE_PATHS, WOOD_PIECE_TEXTURE_PATHS, METAL_PIECE_TEXTURE_PATHS, CAMERA_MOUSE_DRAG_SENSITIVITY, CAMERA_DEFAULT_YAW, CAMERA_DEFAULT_PITCH, CAMERA_MIN_DISTANCE, CAMERA_MAX_DISTANCE, CAMERA_DEFAULT_ANIMATION_SPEED, CAMERA_USE_INTRO_ANIMATION, MOUSE_POSITION_DELTA, CAMERA_ZOOM_SCROLL_SENSITIVITY
 from util.cubemap import load_cubemap_textures, load_texture
 from util.game import notation_to_coords
 from util.objLoaderV4 import ObjLoader
 from util.shaderLoaderV3 import ShaderProgram
+from piece_globals import game_globals
+
 
 # Global variables.
 game: Optional['ChessGame'] = None
@@ -88,6 +90,7 @@ def setup_3d_graphics(new_game):
     glEnable(GL_BLEND)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
     
+    print("Selection", game_globals.piece_selection)
     # Setup the 3D scene.
     setup_generic_shaderProgram()
     setup_chessboard()
@@ -446,8 +449,13 @@ def setup_pieces():
     for color in PIECE_COLORS:
         for piece in PIECES:
             # Load the 3D model for the piece (if the model has already been loaded for one color, it reuses that model for the other color to optimize resource usage).
-            pieces[color][piece]["obj"] = pieces['black' if color == 'white' else 'white'][piece].get("obj") or ObjLoader(PIECE_OBJECT_PATHS[piece])
-            
+            if(game_globals.piece_selection == 0):
+                pieces[color][piece]["obj"] = pieces['black' if color == 'white' else 'white'][piece].get("obj") or ObjLoader(CLASSIC_PIECE_OBJECT_PATHS[piece])
+            elif(game_globals.piece_selection == 1):
+                pieces[color][piece]["obj"] = pieces['black' if color == 'white' else 'white'][piece].get("obj") or ObjLoader(WOOD_PIECE_OBJECT_PATHS[piece])
+            elif(game_globals.piece_selection == 2):
+                pieces[color][piece]["obj"] = pieces['black' if color == 'white' else 'white'][piece].get("obj") or ObjLoader(METAL_PIECE_OBJECT_PATHS[piece])
+
             # Create a VAO and VBO for the piece.
             pieces[color][piece]["vao"] = glGenVertexArrays(1)
             pieces[color][piece]["vbo"] = glGenBuffers(1)
@@ -474,7 +482,14 @@ def setup_pieces():
             
             # Load the piece's texture.
             pieces[color][piece]["texture"] = {}
-            pieces[color][piece]["texture"]["texture_pixels"], pieces[color][piece]["texture"]["texture_size"] = load_texture(PIECE_TEXTURE_PATHS[color][piece], flip=True)
+            
+            if(game_globals.piece_selection == 0):
+                pieces[color][piece]["texture"]["texture_pixels"], pieces[color][piece]["texture"]["texture_size"] = load_texture(CLASSIC_PIECE_TEXTURE_PATHS[color][piece], flip=True)
+            elif(game_globals.piece_selection == 1):
+                pieces[color][piece]["texture"]["texture_pixels"], pieces[color][piece]["texture"]["texture_size"] = load_texture(WOOD_PIECE_TEXTURE_PATHS[color][piece], flip=True)
+            elif(game_globals.piece_selection == 2):
+                pieces[color][piece]["texture"]["texture_pixels"], pieces[color][piece]["texture"]["texture_size"] = load_texture(METAL_PIECE_TEXTURE_PATHS[color][piece], flip=True)
+
             pieces[color][piece]["texture"]["texture_id"] = glGenTextures(1)
             glBindTexture(GL_TEXTURE_2D, pieces[color][piece]["texture"]["texture_id"])
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
