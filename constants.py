@@ -5,7 +5,7 @@ WINDOW = {
 }
 WINDOW.update({"aspect_ratio": WINDOW["width"] / WINDOW["height"]})
 WINDOW.update({"display": (WINDOW["width"], WINDOW["height"])})
-FRAME_RATE = 60 # FPS
+FRAME_RATE = 244 # FPS
 
 # ~ Stockfish
 STOCKFISH_PATH_WINDOWS = './stockfish/stockfish-windows-x86-64-avx2.exe'
