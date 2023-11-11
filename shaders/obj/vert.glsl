@@ -11,6 +11,7 @@ uniform mat4 projection_matrix;
 out vec3 frag_pos;
 out vec3 fragNormal;
 out vec2 fragUV;
+// out vec2 screen_pos;
 
 void main() {
     // Transform the position from object space to world space using the model matrix
@@ -19,6 +20,8 @@ void main() {
 
     // Transform the position from world space to the clip coordinates
     gl_Position = projection_matrix * view_matrix * world_pos;
+    // vec3 ndc = gl_Position.xyz / gl_Position.w;
+    // screen_pos = ndc.xy * 0.5 + 0.5;
 
     // For normal attribute, transform the normal of the vertex by using the transpose of the inverse of the model matrix.
     mat4 normal_matrix = transpose(inverse(model_matrix));
