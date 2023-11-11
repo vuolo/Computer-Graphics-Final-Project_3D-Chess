@@ -15,7 +15,7 @@ import platform
 from graphics.graphics_2d import setup_2d_graphics
 from game.chess_game import ChessGame
 from util.animation import ease_in_out, build_intro_camera_animations
-from constants import WINDOW, PIECES, PIECE_ABR_DICT, PIECE_COLORS, MODEL_TEMPLATE, CHESSBOARD_OBJECT_PATH, CHESSBOARD_TEXTURE_PATH, SQUARE_OBJECT_PATH, HIGHLIGHTED_SQUARE_TEXTURE_PATH, SELECTED_SQUARE_TEXTURE_PATH, VALID_MOVES_SQUARE_TEXTURE_PATH, SKYBOX_PATH, PIECE_OBJECT_PATHS, PIECE_TEXTURE_PATHS, CAMERA_MOUSE_DRAG_SENSITIVITY, CAMERA_DEFAULT_YAW, CAMERA_DEFAULT_PITCH, CAMERA_MIN_DISTANCE, CAMERA_MAX_DISTANCE, CAMERA_DEFAULT_ANIMATION_SPEED, CAMERA_USE_INTRO_ANIMATION, MOUSE_POSITION_DELTA
+from constants import WINDOW, PIECES, PIECE_ABR_DICT, PIECE_COLORS, MODEL_TEMPLATE, CHESSBOARD_OBJECT_PATH, CHESSBOARD_TEXTURE_PATH, SQUARE_OBJECT_PATH, HIGHLIGHTED_SQUARE_TEXTURE_PATH, SELECTED_SQUARE_TEXTURE_PATH, VALID_MOVES_SQUARE_TEXTURE_PATH, SKYBOX_PATH, PIECE_OBJECT_PATHS, PIECE_TEXTURE_PATHS, CAMERA_MOUSE_DRAG_SENSITIVITY, CAMERA_DEFAULT_YAW, CAMERA_DEFAULT_PITCH, CAMERA_MIN_DISTANCE, CAMERA_MAX_DISTANCE, CAMERA_DEFAULT_ANIMATION_SPEED, CAMERA_USE_INTRO_ANIMATION, MOUSE_POSITION_DELTA, CAMERA_ZOOM_SCROLL_SENSITIVITY
 from util.cubemap import load_cubemap_textures, load_texture
 from util.game import notation_to_coords
 from util.objLoaderV4 import ObjLoader
@@ -628,9 +628,9 @@ def handle_mouse_events(events, on_click_callback):
                 last_mouse_pos = pygame.mouse.get_pos()
                 first_mouse_pos = last_mouse_pos
             elif event.button == 4:  # (Scroll up)
-                camera_distance = max(CAMERA_MIN_DISTANCE, camera_distance - 1.0)
+                camera_distance = max(CAMERA_MIN_DISTANCE, camera_distance - CAMERA_ZOOM_SCROLL_SENSITIVITY)
             elif event.button == 5:  # (Scroll down)
-                camera_distance = min(CAMERA_MAX_DISTANCE, camera_distance + 1.0)
+                camera_distance = min(CAMERA_MAX_DISTANCE, camera_distance + CAMERA_ZOOM_SCROLL_SENSITIVITY)
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1:  # (Left click - released)
                 current_mouse_pos = pygame.mouse.get_pos()
