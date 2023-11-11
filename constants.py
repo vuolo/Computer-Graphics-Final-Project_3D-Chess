@@ -1,4 +1,3 @@
-# Third-party imports.
 from pygame.locals import *
 
 # ~ Window

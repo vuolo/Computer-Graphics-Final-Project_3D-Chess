@@ -14,7 +14,7 @@ import platform
 # Local application imports.
 from graphics.graphics_2d import setup_2d_graphics
 from game.chess_game import ChessGame
-from util.animation import ease_in_out, build_intro_camera_animations
+from util.animation import ease_in_out, add_shake, build_intro_camera_animations
 from constants import WINDOW, PIECES, PIECE_ABR_DICT, PIECE_COLORS, MODEL_TEMPLATE, CHESSBOARD_OBJECT_PATH, CHESSBOARD_TEXTURE_PATH, SQUARE_OBJECT_PATH, HIGHLIGHTED_SQUARE_TEXTURE_PATH, SELECTED_SQUARE_TEXTURE_PATH, VALID_MOVES_SQUARE_TEXTURE_PATH, INVALID_MOVE_SQUARE_TEXTURE_PATH, SKYBOX_PATH, PIECE_OBJECT_PATHS, PIECE_TEXTURE_PATHS, CAMERA_MOUSE_DRAG_SENSITIVITY, CAMERA_DEFAULT_YAW, CAMERA_DEFAULT_PITCH, CAMERA_MIN_DISTANCE, CAMERA_MAX_DISTANCE, CAMERA_DEFAULT_ANIMATION_SPEED, CAMERA_USE_INTRO_ANIMATION, MOUSE_POSITION_DELTA, CAMERA_ZOOM_SCROLL_SENSITIVITY
 from util.cubemap import load_cubemap_textures, load_texture
 from util.game import notation_to_coords
@@ -195,8 +195,44 @@ def create_piece_animation(from_square, to_square, piece, start_time, duration):
 def update_piece_animation(animation, delta_time):
     current_time = pygame.time.get_ticks() / 1000.0
     progress = (current_time - animation["start_time"]) / animation["duration"]
+
     if progress < 1:
-        animation["current_position"] = interpolate(animation["start_position"], animation["end_position"], progress)
+        # Define the proportions and maximum height as before
+        ascend_proportion = 0.25
+        descend_proportion = 0.25
+        move_proportion = 0.5
+        max_height = 2.5
+        max_shake_intensity = 0.05
+
+        # Adjust the range for shake progress
+        if progress < ascend_proportion:  # Ascending phase
+            eased_progress = ease_in_out(progress / ascend_proportion)
+            height = eased_progress * max_height
+            position = np.array([animation["start_position"][0], height, animation["start_position"][2]])
+
+            # Apply shake towards the end of the ascending phase
+            if progress > ascend_proportion * 0.7:  # Start shaking earlier
+                shake_progress = (progress - ascend_proportion * 0.7) / (ascend_proportion * 0.3)
+                position = add_shake(position, shake_progress, max_shake_intensity)
+
+            animation["current_position"] = position
+        
+        elif progress < ascend_proportion + move_proportion:  # Moving phase
+            eased_progress = ease_in_out((progress - ascend_proportion) / move_proportion)
+            horizontal_position = interpolate(animation["start_position"], animation["end_position"], eased_progress)
+            animation["current_position"] = np.array([horizontal_position[0], max_height, horizontal_position[2]])
+
+        else:  # Descending phase
+            eased_progress = ease_in_out((progress - ascend_proportion - move_proportion) / descend_proportion)
+            height = max_height * (1 - eased_progress)
+            position = np.array([animation["end_position"][0], height, animation["end_position"][2]])
+
+            # Apply shake at the start of the descending phase
+            if progress < ascend_proportion + move_proportion + descend_proportion * 0.3:  # Shake for a longer duration
+                shake_progress = (progress - ascend_proportion - move_proportion) / (descend_proportion * 0.3)
+                position = add_shake(position, shake_progress, max_shake_intensity)
+
+            animation["current_position"] = position
     else:
         animation["is_active"] = False
         animation["current_position"] = animation["end_position"]
