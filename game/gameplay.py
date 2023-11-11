@@ -95,8 +95,6 @@ def post_draw_gameloop():
 # ~ TODO: Click detection (for 3D graphics)
 def handle_mouse_click(x, y): 
     print(f"Accessed handle_mouse_click with: {x}, {y}")
-    #ray = get_ray_from_mouse(x,y)
-    #print(f"Ray: {ray}")
     
 
 # def handle_mouse_click(events):

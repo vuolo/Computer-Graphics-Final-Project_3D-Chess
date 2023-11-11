@@ -462,8 +462,6 @@ def handle_mouse_events(events, on_click_callback):
                 delta_maginitude = math.sqrt(delta_x**2 + delta_y**2)
                 if delta_maginitude < MOUSE_POSITION_DELTA:
                     x, y = current_mouse_pos
-                    #on_click_callback(x, y)
-                    handle_ray_tracing(x, y)
                 is_dragging = False
         elif event.type == pygame.MOUSEMOTION:
             if is_dragging:
@@ -479,73 +477,123 @@ def handle_mouse_events(events, on_click_callback):
                 # Clamp pitch to prevent flipping.
                 pitch = max(min(pitch, np.deg2rad(89)), np.deg2rad(-89))                
 
-def handle_ray_tracing(x, y):
-    ray = get_ray_from_mouse(x, y)
-    print(f"Ray: {ray}")
+# def handle_ray_tracing(x, y):
+#     ray_origin, ray_direction = get_ray_from_mouse(x, y)
+#     print(f"Ray: {ray_origin, ray_direction}")
+#     intersect_ray_with_object(ray_origin, ray_direction)
+#     # intersect = intersect_ray_with_plane(ray_origin, ray_direction, np.array([0,0,0]), up)
+#     # #print(f"Intersect: {intersect}")
 
-# # ~ TODO: Mouse raycasting (for click detection)
-def get_ray_from_mouse(mouse_x, mouse_y):
-    # Convert mouse position to normalized device coordinates (NDC)
-    ndc_x = (2.0 * mouse_x) / WINDOW["width"] - 1.0
-    ndc_y = 1.0 - (2.0 * mouse_y) / WINDOW["height"]
-    ndc = np.array([ndc_x, ndc_y, -1.0, 1.0])  # Set z to -1 for the near plane and w to 1
+#     # if intersect is not None:
+#     #     # Step 4: Determine the chessboard square from the intersection
+#     #     chess_square = determine_square_from_intersection(intersect)
+#     #     print(f"Chess Square: {chess_square}")
+#     #     return chess_square
+#     # else:
+#     #     print("No intersection with the chessboard.")
+#     #     return None
 
-    # Transform NDC to homogeneous clip coordinates
-    clip = np.array([ndc_x, ndc_y, -1.0, 1.0])
+# # # ~ TODO: Mouse raycasting (for click detection)
+# def get_ray_from_mouse(mouse_x, mouse_y):
+#     global view_matrix
+#     # Convert mouse position to normalized device coordinates (NDC)
+#     ndc_x = (2.0 * mouse_x) / WINDOW["width"] - 1.0
+#     ndc_y = 1.0 - (2.0 * mouse_y) / WINDOW["height"]
+#     ndc = np.array([ndc_x, ndc_y, 1.0, 1.0])  # Using 1.0 for z and w
 
-    # Transform clip coordinates to eye coordinates
-    eye = np.linalg.inv(projection_matrix) @ clip
-    eye = np.array([eye[0], eye[1], -1.0, 0.0])  # Set z to -1 and w to 0 for direction
+#     # Transform NDC to eye coordinates
+#     eye_coords = np.linalg.inv(projection_matrix) @ ndc
+#     eye_coords = np.array([eye_coords[0], eye_coords[1], -1.0, 0.0])  # Direction vector
 
-    # Transform eye coordinates to world coordinates
-    world = np.linalg.inv(view_matrix) @ eye
-    world /= np.linalg.norm(world)
+#     # Transform eye coordinates to world coordinates
+#     world_coords = np.linalg.inv(view_matrix) @ eye_coords
+#     world_coords /= np.linalg.norm(world_coords[0:3])  # Normalize the direction vector
 
-    # Ray origin is the camera position (eye)
-    ray_origin = eye[:3]
+#     # Ray origin (camera position in world space) and direction
+#     ray_origin = np.linalg.inv(view_matrix) @ np.array([0, 0, 0, 1])  # Camera's position in world space
+#     ray_direction = world_coords[0:3]
 
-    # Ray direction is the normalized world coordinates
-    ray_direction = world[:3]
+#     return ray_origin[0:3], ray_direction
 
-    return ray_origin, ray_direction
+# def intersect_ray_with_object(ray_origin, ray_direction):
+#     global chessboard
+#     # Transform the ray to the object's local space
+#     inv_model_matrix = np.linalg.inv(chessboard["model_matrix"])
+#     local_ray_origin = inv_model_matrix @ np.append(ray_origin, 1)
+#     local_ray_direction = inv_model_matrix @ np.append(ray_direction, 0)
 
-def intersect_ray_with_plane(ray_origin, ray_direction, plane_origin, plane_normal):
-    # Calculate intersection using ray-plane intersection formula
-    denom = np.dot(ray_direction, plane_normal)
-    if np.abs(denom) > 1e-6:
-        p0l0 = plane_origin - ray_origin
-        t = np.dot(p0l0, plane_normal) / denom
-        if t >= 0:  # Check if the intersection is in the direction of the ray
-            intersection = ray_origin + t * ray_direction
-            # Logging to help debug
-            print(f"Intersection T: {t}, Intersection Point: {intersection}")
-            return intersection
-    return None
+#     # Perform intersection test (e.g., with an AABB representing the object)
+#     # This will vary depending on the shape of your objects
+#     # Return True if intersecting, False otherwise
+#     return is_intersecting(local_ray_origin[0:3], local_ray_direction[0:3], chessboard["bounds"])
 
-def determine_square_from_intersection(intersection_point):
-    # Assuming the chessboard is 8x8 units and centered at the origin
-    chessboard_size = 0.75
-    half_chessboard_size = chessboard_size / 2
+# def is_intersecting(ray_origin, ray_direction, bounds):
+#     print(f"bounds: {bounds}")
+#     # # Unpack the bounds
+#     # min_bound, max_bound = bounds
 
-    # Convert the intersection point to a local position relative to the chessboard center
-    local_pos_x = (intersection_point[0] + half_chessboard_size) / chessboard_size * 8
-    local_pos_z = (intersection_point[2] + half_chessboard_size) / chessboard_size * 8
+#     # # Initialize t_min and t_max
+#     # t_min = (min_bound[0] - ray_origin[0]) / ray_direction[0]
+#     # t_max = (max_bound[0] - ray_origin[0]) / ray_direction[0]
 
-    # Normalize the local position to the range [0, 7]
-    file_index = int(local_pos_x)
-    rank_index = int(local_pos_z)
+#     # if t_min > t_max:
+#     #     t_min, t_max = t_max, t_min
 
-    # Ensure the indices are within the bounds [0, 7]
-    file_index = min(max(file_index, 0), 7)
-    rank_index = min(max(rank_index, 0), 7)
+#     # for i in range(1, 3):
+#     #     t1 = (min_bound[i] - ray_origin[i]) / ray_direction[i]
+#     #     t2 = (max_bound[i] - ray_origin[i]) / ray_direction[i]
 
-    # Convert the indices to chess notation
-    file_letter = chr(ord('a') + file_index)
-    rank_number = str(8 - rank_index)
+#     #     if t1 > t2:
+#     #         t1, t2 = t2, t1
 
-    # Logging to help debug
-    print(f"Local X: {local_pos_x}, Local Z: {local_pos_z}")
-    print(f"File Index: {file_index}, Rank Index: {rank_index}")
-    print(f"File Letter: {file_letter}, Rank Number: {rank_number}")
-    
-    return file_letter + rank_number
+#     #     if (t_min > t2) or (t1 > t_max):
+#     #         return False
+
+#     #     t_min = max(t_min, t1)
+#     #     t_max = min(t_max, t2)
+
+#     # return t_min < t_max and t_max > 0
+
+
+# def intersect_ray_with_plane(ray_origin, ray_direction, plane_origin, plane_normal):
+#     global chessboard
+#     # Transform the plane origin and normal according to the chessboard's model_matrix
+#     plane_origin = np.array([0, 0, 0, 1])
+#     plane_normal = np.array([0, 1, 0, 0])  # Normal vector pointing upwards
+
+#     transformed_plane_origin = chessboard["model_matrix"] @ plane_origin
+#     transformed_plane_normal = chessboard["model_matrix"] @ plane_normal
+
+#     # Calculate intersection using ray-plane intersection formula
+#     denom = np.dot(ray_direction, transformed_plane_normal[:3])
+#     if np.abs(denom) > 1e-6:
+#         p0l0 = transformed_plane_origin[:3] - ray_origin
+#         t = np.dot(p0l0, transformed_plane_normal[:3]) / denom
+#         if t >= 0:  # Check if the intersection is in the direction of the ray
+#             intersection = ray_origin + t * ray_direction
+#             return intersection
+#     return None
+
+
+# def determine_square_from_intersection(intersection_point):
+#     global chessboard
+#     # Transform the intersection point to the chessboard's local coordinates
+#     local_intersection_point = np.linalg.inv(chessboard["model_matrix"]) @ np.append(intersection_point, 1)
+
+#     # Assuming each square is 1 unit in size in the chessboard's local coordinate system
+#     local_pos_x = local_intersection_point[0] + 4
+#     local_pos_z = local_intersection_point[2] + 4
+
+#     # Normalize the local position to the range [0, 7]
+#     file_index = int(local_pos_x)
+#     rank_index = int(local_pos_z)
+
+#     # Ensure the indices are within the bounds [0, 7]
+#     file_index = min(max(file_index, 0), 7)
+#     rank_index = min(max(rank_index, 0), 7)
+
+#     # Convert the indices to chess notation
+#     file_letter = chr(ord('a') + file_index)
+#     rank_number = str(8 - rank_index)
+
+#     return file_letter + rank_number
