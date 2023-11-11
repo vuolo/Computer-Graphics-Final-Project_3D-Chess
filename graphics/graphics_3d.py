@@ -66,8 +66,12 @@ piece_animations = {}
 
 # ~ Main
 def setup_3d_graphics(new_game):
-    global game, shaderProgram
+    global game, shaderProgram, intro_animation_started
     game = new_game
+    
+    # Reset the intro animation.
+    intro_animation_started = True
+    start_intro_camera_animation()
     
     # Set up OpenGL context's major and minor version numbers.
     pygame.display.gl_set_attribute(GL_CONTEXT_MAJOR_VERSION, 3)
