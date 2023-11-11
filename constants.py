@@ -71,6 +71,10 @@ CAMERA_ANIMATE_AFTER_MOVE_DELAY = 1200 # ms
 # ~ Piece animation
 PIECE_ANIMATION_DURATION = 1.0 # seconds
 
+# ~ HUD items
+HUD_TEXT_MODEL_OBJECT_PATH = 'models/hud_items/hud_text.obj'
+HUD_TEXT_EXAMPLE_TEXTURE_PATH = 'models/hud_items/text_example.png'
+
 # ~ Custom pygame events
 ROTATE_CAMERA_EVENT = USEREVENT + 1
 DISABLE_INVALID_MOVE_SQUARE_EVENT = USEREVENT + 2

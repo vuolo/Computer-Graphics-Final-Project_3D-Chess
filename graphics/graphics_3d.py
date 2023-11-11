@@ -15,12 +15,11 @@ import platform
 from graphics.graphics_2d import setup_2d_graphics
 from game.chess_game import ChessGame
 from graphics.animation import ease_in_out, add_shake, build_intro_camera_animations
-from constants import WINDOW, PIECES, PIECE_ABR_DICT, PIECE_COLORS, MODEL_TEMPLATE, CHESSBOARD_OBJECT_PATH, CHESSBOARD_TEXTURE_PATH, SQUARE_OBJECT_PATH, HIGHLIGHTED_SQUARE_TEXTURE_PATH, SELECTED_SQUARE_TEXTURE_PATH, VALID_MOVES_SQUARE_TEXTURE_PATH, INVALID_MOVE_SQUARE_TEXTURE_PATH, SKYBOX_PATH, CLASSIC_PIECE_OBJECT_PATHS, WOOD_PIECE_OBJECT_PATHS, METAL_PIECE_OBJECT_PATHS, CLASSIC_PIECE_TEXTURE_PATHS, WOOD_PIECE_TEXTURE_PATHS, METAL_PIECE_TEXTURE_PATHS, CAMERA_MOUSE_DRAG_SENSITIVITY, CAMERA_DEFAULT_YAW, CAMERA_DEFAULT_PITCH, CAMERA_MIN_DISTANCE, CAMERA_MAX_DISTANCE, CAMERA_DEFAULT_ANIMATION_SPEED, CAMERA_USE_INTRO_ANIMATION, MOUSE_POSITION_DELTA, CAMERA_ZOOM_SCROLL_SENSITIVITY
+from constants import WINDOW, PIECES, PIECE_ABR_DICT, PIECE_COLORS, MODEL_TEMPLATE, CHESSBOARD_OBJECT_PATH, CHESSBOARD_TEXTURE_PATH, SQUARE_OBJECT_PATH, HIGHLIGHTED_SQUARE_TEXTURE_PATH, SELECTED_SQUARE_TEXTURE_PATH, VALID_MOVES_SQUARE_TEXTURE_PATH, INVALID_MOVE_SQUARE_TEXTURE_PATH, SKYBOX_PATH, CLASSIC_PIECE_OBJECT_PATHS, WOOD_PIECE_OBJECT_PATHS, METAL_PIECE_OBJECT_PATHS, CLASSIC_PIECE_TEXTURE_PATHS, WOOD_PIECE_TEXTURE_PATHS, METAL_PIECE_TEXTURE_PATHS, CAMERA_MOUSE_DRAG_SENSITIVITY, CAMERA_DEFAULT_YAW, CAMERA_DEFAULT_PITCH, CAMERA_MIN_DISTANCE, CAMERA_MAX_DISTANCE, CAMERA_DEFAULT_ANIMATION_SPEED, CAMERA_USE_INTRO_ANIMATION, MOUSE_POSITION_DELTA, CAMERA_ZOOM_SCROLL_SENSITIVITY, HUD_TEXT_MODEL_OBJECT_PATH, HUD_TEXT_EXAMPLE_TEXTURE_PATH
 from util.cubemap import load_cubemap_textures, load_texture
 from util.game import notation_to_coords
 from util.objLoaderV4 import ObjLoader
 from util.shaderLoaderV3 import ShaderProgram
-
 
 # Global variables.
 game: Optional['ChessGame'] = None
@@ -63,6 +62,31 @@ intro_keyframes = build_intro_camera_animations(yaw, pitch, camera_distance)["20
 current_intro_keyframe = 0
 # (Piece animation):
 piece_animations = {}
+# ~ Hud text
+hud_text_model: dict = MODEL_TEMPLATE.copy()
+# ~ Indicators
+indicator_squares = {
+    "whos_turn": MODEL_TEMPLATE.copy()  # Assuming MODEL_TEMPLATE is a dictionary or similar structure
+}
+indicator_square_ext = {
+    "whos_turn": {
+        "texture_path": "models/indicators/whos_turn.png",
+        "position": {
+            "white": {
+                "row": 0,
+                "col": -2
+            },
+            "black": {
+                "row": 7,
+                "col": -2
+            }
+        }
+    }
+}
+for key, nested_values in indicator_square_ext.items():
+    if key in indicator_squares:
+        for nested_key, nested_value in nested_values.items():
+            indicator_squares[key][nested_key] = nested_value
 
 # ~ Main
 def setup_3d_graphics(new_game):
@@ -94,17 +118,20 @@ def setup_3d_graphics(new_game):
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
     
     print("Selection", game.piece_selection)
+    
     # Setup the 3D scene.
     setup_generic_shaderProgram()
     setup_chessboard()
     setup_pieces()
     setup_skybox()
     setup_highlights()
+    setup_indicators()
+    setup_hud_text()
     
     return screen
 
 # ~ Graphics
-def draw_graphics(delta_time, highlighted_square, selected_square, valid_move_squares, invalid_move_square):
+def draw_graphics(delta_time, game, highlighted_square, selected_square, valid_move_squares, invalid_move_square):
     global intro_animation_started
     if not intro_animation_started: update_camera_animation(delta_time)
     
@@ -115,11 +142,12 @@ def draw_graphics(delta_time, highlighted_square, selected_square, valid_move_sq
     update_graphics(delta_time)
     draw_chessboard()
     draw_highlights(highlighted_square, selected_square, valid_move_squares, invalid_move_square)
+    draw_indicators(game)
     draw_pieces()
     draw_skybox()
     
     # Draw text on top of the 3D scene.
-    # draw_text("Sample Text", WINDOW["width"] / 2, WINDOW["height"] / 2)
+    # draw_hud_text()
     
 def draw_highlights(highlighted_square, selected_square, valid_move_squares, invalid_move_square):
     global highlighted_square_model, selected_square_model, valid_move_square_model
@@ -129,6 +157,19 @@ def draw_highlights(highlighted_square, selected_square, valid_move_squares, inv
         for square in valid_move_squares:
             draw_at_board_position(valid_move_square_model, 7 - square[1], square[0])
     if invalid_move_square: draw_at_board_position(invalid_move_square_model, 7 - invalid_move_square[1], invalid_move_square[0])
+    
+def setup_indicators():
+    global indicator_squares
+    for square_model in indicator_squares.values():
+        setup_highlight(square_model, square_model["texture_path"], scale_factor=0.1)
+    
+def draw_indicators(game):
+    global indicator_squares
+    
+    # Who's turn indicator
+    indicator_to_use = "whos_turn"
+    whos_turn = game.get_whos_turn()
+    draw_at_board_position(indicator_squares[indicator_to_use], 7 - indicator_squares[indicator_to_use]["position"][whos_turn]["row"], indicator_squares[indicator_to_use]["position"][whos_turn]["col"])
 
 def update_graphics(delta_time):
     global rotated_eye, camera_distance, yaw, pitch, view_matrix, projection_matrix, is_animating
@@ -152,13 +193,92 @@ def cleanup_graphics():
     glDeleteProgram(shaderProgram.shader)
     glDeleteProgram(skybox["shaderProgram"].shader)
 
-# ~ Text
-def draw_text(text, x, y, font_size=32, color=(255, 255, 255)):
-    font = pygame.font.SysFont('arial', 64)
-    textSurface = font.render(text, True, color).convert_alpha()
-    textData = pygame.image.tostring(textSurface, "RGBA", True)
-    glWindowPos2d(x, y)
-    glDrawPixels(textSurface.get_width(), textSurface.get_height(), GL_RGBA, GL_UNSIGNED_BYTE, textData)
+# ~ HUD text
+def setup_hud_text():
+    global hud_text_model
+    hud_text_model["obj"] = ObjLoader(HUD_TEXT_MODEL_OBJECT_PATH)
+    
+    # Create a VAO and VBO for the object.
+    hud_text_model["vao"] = glGenVertexArrays(1)
+    hud_text_model["vbo"] = glGenBuffers(1)
+    
+    # Upload the object's model data to the GPU.
+    glBindVertexArray(hud_text_model["vao"])
+    glBindBuffer(GL_ARRAY_BUFFER, hud_text_model["vbo"])
+    glBufferData(GL_ARRAY_BUFFER, hud_text_model["obj"].vertices, GL_STATIC_DRAW)
+    
+    # Configure the vertex attributes for the object (position, normal, and uv).
+    position_loc, normal_loc, uv_loc = 0, 1, 2
+    glVertexAttribPointer(position_loc, hud_text_model["obj"].size_position, GL_FLOAT,
+                          GL_FALSE, hud_text_model["obj"].stride, ctypes.c_void_p(hud_text_model["obj"].offset_position))
+    glVertexAttribPointer(normal_loc, hud_text_model["obj"].size_normal, GL_FLOAT,
+                          GL_FALSE, hud_text_model["obj"].stride, ctypes.c_void_p(hud_text_model["obj"].offset_normal))
+    glVertexAttribPointer(uv_loc, hud_text_model["obj"].size_texture, GL_FLOAT,
+                          GL_FALSE, hud_text_model["obj"].stride, ctypes.c_void_p(hud_text_model["obj"].offset_texture))
+    glEnableVertexAttribArray(position_loc)
+    glEnableVertexAttribArray(normal_loc)
+    glEnableVertexAttribArray(uv_loc)
+    
+    # Create a 4x4 model matrix (to transform the object from model space to world space) for the object.
+    scale_factor = 2 / hud_text_model["obj"].dia
+    translation_matrix = pyrr.matrix44.create_from_translation(-hud_text_model["obj"].center)
+    scale_matrix = pyrr.matrix44.create_from_scale([scale_factor, scale_factor, scale_factor])
+    hud_text_model["model_matrix"] = pyrr.matrix44.multiply(translation_matrix, scale_matrix)
+    
+    # Load the object's texture.
+    hud_text_model["texture"] = {}
+    hud_text_model["texture"]["texture_pixels"], hud_text_model["texture"]["texture_size"] = load_texture(HUD_TEXT_EXAMPLE_TEXTURE_PATH, flip=True)
+    hud_text_model["texture"]["texture_id"] = glGenTextures(1)
+    glBindTexture(GL_TEXTURE_2D, hud_text_model["texture"]["texture_id"])
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, hud_text_model["texture"]["texture_size"]["width"], hud_text_model["texture"]["texture_size"]["height"],
+                 0, GL_RGB, GL_UNSIGNED_BYTE, hud_text_model["texture"]["texture_pixels"])
+
+# TODO: make this draw properly in front of the camera
+def draw_hud_text():
+    global hud_text_model, view_matrix, projection_matrix, rotated_eye, shaderProgram
+    
+    # Get the inverse of the view matrix to obtain the camera's orientation.
+    inv_view_matrix = np.linalg.inv(view_matrix)
+
+    # Calculate a position in front of the camera.
+    # This position is relative to the near plane.
+    hud_distance = near_plane + 0.1  # Slightly in front of the near plane to avoid clipping.
+    hud_position = np.array([0, 0, -hud_distance, 1])  # In the camera's local space.
+
+    # Transform the position to world space using the inverse view matrix.
+    hud_position_world = inv_view_matrix @ hud_position
+
+    # Calculate the scale for the HUD text.
+    hud_scale = 0.15  # Adjust this value as needed for a suitable size.
+    hud_scale_matrix = pyrr.matrix44.create_from_scale([hud_scale, hud_scale, hud_scale])
+
+    # Create a rotation matrix to rotate the HUD text by 90 degrees around the x-axis.
+    hud_rotation_matrix = pyrr.matrix44.create_from_x_rotation(np.radians(90))
+
+    # Create a translation matrix to position the HUD text in front of the camera.
+    hud_translation_matrix = pyrr.matrix44.create_from_translation(hud_position_world[:3])
+
+    # Combine the scale, rotation, and translation transformations.
+    hud_model_matrix = pyrr.matrix44.multiply(hud_scale_matrix, hud_rotation_matrix)
+    hud_model_matrix = pyrr.matrix44.multiply(hud_model_matrix, hud_translation_matrix)
+
+    # Send the model matrix to the shader.
+    shaderProgram["model_matrix"] = hud_model_matrix
+    shaderProgram["view_matrix"] = np.eye(4)  # Use an identity matrix for the view matrix.
+    shaderProgram["projection_matrix"] = projection_matrix
+    shaderProgram["eye_pos"] = rotated_eye
+
+    # Bind the object's texture.
+    glActiveTexture(GL_TEXTURE0)
+    glBindTexture(GL_TEXTURE_2D, hud_text_model["texture"]["texture_id"])
+
+    # Draw the object.
+    glBindVertexArray(hud_text_model["vao"])
+    glDrawArrays(GL_TRIANGLES, 0, hud_text_model["obj"].n_vertices)
     
 # ~ Shader setup
 def setup_generic_shaderProgram():
@@ -415,7 +535,7 @@ def setup_highlights():
     setup_highlight(valid_move_square_model, VALID_MOVES_SQUARE_TEXTURE_PATH)
     setup_highlight(invalid_move_square_model, INVALID_MOVE_SQUARE_TEXTURE_PATH)
 
-def setup_highlight(model, texture_path):
+def setup_highlight(model, texture_path, scale_factor=0.1):
     model["obj"] = ObjLoader(SQUARE_OBJECT_PATH)
     
     # Create a VAO and VBO for the object.
@@ -440,7 +560,7 @@ def setup_highlight(model, texture_path):
     glEnableVertexAttribArray(uv_loc)
     
     # Create a 4x4 model matrix (to transform the object from model space to world space) for the object.
-    scale_factor = 2 / model["obj"].dia * 0.1 # Scale the highlighted square down to fit on the chessboard squares properly.
+    scale_factor = 2 / model["obj"].dia * scale_factor # Scale the highlighted square down to fit on the chessboard squares properly.
     translation_matrix = pyrr.matrix44.create_from_translation(-model["obj"].center)
     scale_matrix = pyrr.matrix44.create_from_scale([scale_factor, scale_factor, scale_factor])
     model["model_matrix"] = pyrr.matrix44.multiply(translation_matrix, scale_matrix)

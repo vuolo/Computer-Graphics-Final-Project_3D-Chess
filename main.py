@@ -35,7 +35,7 @@ def main(game_settings=None):
             main(game_settings=game.get_settings())
             return
             
-        draw_graphics(delta_time, result['highlighted_square'], result['selected_square'], result['valid_move_squares'], result['invalid_move_square'])
+        draw_graphics(delta_time, game, result['highlighted_square'], result['selected_square'], result['valid_move_squares'], result['invalid_move_square'])
         post_draw_gameloop()
 
     cleanup(quitting=True)
