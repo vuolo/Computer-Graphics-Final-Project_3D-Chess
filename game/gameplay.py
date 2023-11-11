@@ -25,7 +25,8 @@ last_highlighted_white: Tuple[int, int] = notation_to_coords('d2')
 last_highlighted_black: Tuple[int, int] = notation_to_coords('e7')
 is_selected: bool = False  # State to track if a square is selected
 mouse_click_detected: bool = False
-move_sound = pygame.mixer.Sound('./sounds/move.mp3')
+end_move_sound = pygame.mixer.Sound('./sounds/end_move.mp3')
+start_move_sound = pygame.mixer.Sound('./sounds/start_move.mp3')
 side_to_rotate_to = None
 invalid_move_square = None
 
@@ -78,7 +79,7 @@ def pre_draw_gameloop():
             invalid_move_square = None
 
         elif event.type == DELAYED_MOVE_SOUND_EVENT:
-            move_sound.play()
+            end_move_sound.play()
                 
     handle_mouse_events(events, handle_mouse_click)
     attempt_move_ai_opponent()
@@ -198,7 +199,7 @@ def post_successful_move_processing(move=None, target_square=None):
     print(f"~ You moved: {move}")
     is_selected = False
     game.display_whos_turn()
-    pygame.time.set_timer(DELAYED_MOVE_SOUND_EVENT, int(math.floor(PIECE_ANIMATION_DURATION * 1000)), 1)
+    play_move_sound()
     
     if game.get_ai_opponent_enabled(): return
     if CAMERA_ANIMATE_AFTER_MOVE: rotate_camera_to_side(game.get_whos_turn())
@@ -211,7 +212,9 @@ def post_successful_move_processing(move=None, target_square=None):
         last_highlighted_black = target_square
         highlighted_square = last_highlighted_white
 
-        
+def play_move_sound():
+    start_move_sound.play()
+    pygame.time.set_timer(DELAYED_MOVE_SOUND_EVENT, int(math.floor(PIECE_ANIMATION_DURATION * 1000)), 1)
 
 def select_square(square_to_select: Tuple[int, int]):
     global selected_square, valid_move_squares, highlighted_square, last_highlighted_white, last_highlighted_black
@@ -243,7 +246,7 @@ def select_square(square_to_select: Tuple[int, int]):
 # ~ AI opponent
 def attempt_move_ai_opponent():
     if game.ai_opponent_enabled and game.board.turn == chess.BLACK:
-        pygame.time.set_timer(DELAYED_MOVE_SOUND_EVENT, int(math.floor(PIECE_ANIMATION_DURATION * 1000)), 1)
+        play_move_sound()
         ai_move = game.make_ai_move()
         if ai_move:
             # Parse the move to get from and to squares
