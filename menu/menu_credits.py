@@ -20,6 +20,7 @@ def open_credits_menu(surface, game):
     
     # Add the third-party credits.
     credits_menu.add.label(third_party_credits.replace(" ", " \t "), max_char=-1, align=pygame_menu.locals.ALIGN_CENTER)
+    credits_menu.add.label('')
 
     # Add a button to return to the main menu.
     credits_menu.add.button('Return To Main Menu'.replace(" ", " \t "), credits_menu.disable)

@@ -24,6 +24,7 @@ def open_store_menu(surface, game):
     )
     
     # Add a button to return to the main menu.
+    store_menu.add.label('')
     store_menu.add.button('Return To Main Menu'.replace(" ", " \t "), store_menu.disable)
     store_menu.mainloop(surface, bgfun=lambda: draw_main_menu_background(surface, menu_type='store'))
     

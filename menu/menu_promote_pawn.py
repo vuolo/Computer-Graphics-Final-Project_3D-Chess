@@ -4,18 +4,6 @@ import pygame_menu
 # Local application imports.
 from menu.theme import menu_theme, draw_main_menu_background
 
-def change_elo(difficulty_name, elo, game):
-    # Change the Elo of the AI opponent.
-    if game.get_ai_elo() != elo:
-        game.set_ai_elo(elo)
-        print(f"Changed AI difficulty to {difficulty_name} (Elo: {elo}).")
-        
-def toggle_ai(enabled, game):
-    # Toggle the AI opponent on or off.
-    if game.get_ai_opponent_enabled() != enabled:
-        game.set_ai_opponent_enabled(enabled)
-        print(f"AI opponent {'enabled' if enabled else 'disabled'}.")
-
 def open_promote_pawn_menu(surface, game):
     promote_pawn_menu = pygame_menu.Menu(
         title='Promote Pawn',
@@ -38,7 +26,3 @@ def open_promote_pawn_menu(surface, game):
 def return_to_game(game, promote_pawn_menu, pawn_selection="Queen"):
     game.set_pawn_promotion_selection(pawn_selection)
     promote_pawn_menu.disable()
-    
-
-# Example usage:
-# open_promote_pawn_menu(surface, game)

@@ -8,6 +8,7 @@ from game.gameplay import pre_draw_gameloop, post_draw_gameloop, gameplay_setup
 from menu.menu import init_main_menu
 from menu.menu_pause import open_pause_menu
 from menu.menu_promote_pawn import open_promote_pawn_menu
+from menu.menu_game_over import open_game_over_menu
 from graphics.graphics_3d import setup_3d_graphics, draw_graphics, cleanup_graphics
 
 def main(game_settings=None):
@@ -30,26 +31,34 @@ def main(game_settings=None):
         result = pre_draw_gameloop()
         if result == 'quit': break
         elif result == 'pause':
-            open_pause_menu(pygame.display.set_mode(WINDOW["display"]), game)
-            setup_3d_graphics(game, gui, is_resume=True)
+            pause_game_and_continue(lambda: open_pause_menu(pygame.display.set_mode(WINDOW["display"]), game), game, gui)
             continue
         elif result == 'needs_pawn_promotion':
-            open_promote_pawn_menu(pygame.display.set_mode(WINDOW["display"]), game)
-            setup_3d_graphics(game, gui, is_resume=True)
+            pause_game_and_continue(lambda: open_promote_pawn_menu(pygame.display.set_mode(WINDOW["display"]), game), game, gui)
             continue
+        elif result == 'game_over':
+            restart_game(game, display_menu_first_func=lambda: open_game_over_menu(pygame.display.set_mode(WINDOW["display"]), game))
+            return
         elif result == 'play_bowling_animation':
-            # play_bowling_animation(pygame.display.set_mode(WINDOW["display"]), game, use_random_animation=True)
-            setup_3d_graphics(game, gui, is_resume=True)
+            # pause_game_and_continue(lambda: play_bowling_animation(pygame.display.set_mode(WINDOW["display"]), game, use_random_animation=True), game, gui)
             continue
         if game.get_go_to_main_menu():
-            cleanup()
-            main(game_settings=game.get_settings())
+            restart_game(game)
             return
             
         draw_graphics(delta_time, result['highlighted_square'], result['selected_square'], result['valid_move_squares'], result['invalid_move_square'])
         post_draw_gameloop()
 
     cleanup(quitting=True)
+    
+def restart_game(game, display_menu_first_func=None):
+    if display_menu_first_func: display_menu_first_func()
+    cleanup()
+    main(game_settings=game.get_settings())
+    
+def pause_game_and_continue(menu_func, game, gui):
+    menu_func()
+    setup_3d_graphics(game, gui, is_resume=True)
 
 def cleanup(quitting=False):
     # Cleanup.

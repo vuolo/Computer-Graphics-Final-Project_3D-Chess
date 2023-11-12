@@ -171,9 +171,19 @@ class ChessGame:
                     if move.from_square == chess.parse_square(square):
                         moves.append((chess.square_file(move.to_square), chess.square_rank(move.to_square)))
         except ValueError:
-            # TODO: Handle the case where the input square is not valid
             pass
         return moves
+    
+    def get_winner(self):
+        '''Check the game's winner or if it's a draw using python-chess library'''
+        if self.board.is_checkmate():
+            return "white" if self.board.turn == chess.BLACK else "black"
+        elif self.board.is_stalemate() or self.board.is_insufficient_material() or \
+            self.board.is_seventyfive_moves() or self.board.is_fivefold_repetition() or \
+            self.board.can_claim_draw():
+            return "draw"
+            
+        return None  # If none of the above, the game is still ongoing.
 
     # ~ Cleanup
     def __del__(self):

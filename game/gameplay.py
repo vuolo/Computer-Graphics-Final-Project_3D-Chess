@@ -60,6 +60,12 @@ def pre_draw_gameloop():
     if pawn_promotion_selection:
         process_move(highlighted_square, pawn_promotion_selection)
         game.set_pawn_promotion_selection(None)
+        
+    # Check if the game is over (has a winner).
+    winner = game.get_winner()
+    if winner:
+        print(f"Game Over! {winner.capitalize()} wins!")
+        return 'game_over'
     
     for event in events:
         if event.type == pygame.QUIT:

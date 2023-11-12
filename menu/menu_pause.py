@@ -41,6 +41,7 @@ def open_pause_menu(surface, game):
         default=ai_enabled,
         onchange=lambda enabled: toggle_ai(enabled, game)
     )
+    pause_menu.add.label('')
     pause_menu.add.button('Return To Main Menu'.replace(" ", " \t "), lambda: return_to_main_menu(pause_menu,  game))
     
     pause_menu.mainloop(surface, bgfun=lambda: draw_main_menu_background(surface, menu_type='pause'))
