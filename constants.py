@@ -29,6 +29,7 @@ SETTINGS_MENU_BACKGROUND_IMAGE = 'images/menu/4.png'
 STORE_MENU_BACKGROUND_IMAGE = 'images/menu/1.png'
 PAUSE_MENU_BACKGROUND_IMAGE = 'images/menu/2.png'
 PROMOTE_PAWN_BACKGROUND_IMAGE = 'images/menu/promote_pawn.png'
+GAME_OVER_BACKGROUND_IMAGE = 'images/menu/game_over.png'
 DEFAULT_PIECE_SELECTION = 0 # 0 := classic, 1 := wood, 2 := metal
 
 # ~ Pieces

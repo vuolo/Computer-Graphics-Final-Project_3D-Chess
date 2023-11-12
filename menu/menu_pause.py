@@ -28,7 +28,6 @@ def open_pause_menu(surface, game):
     ai_enabled = game.get_ai_opponent_enabled()
     
     # Add pause menu options.
-    pause_menu.add.button('Return To Game'.replace(" ", " \t "), pause_menu.disable)
     pause_menu.add.selector(
         'Difficulty \t (Elo): \t ',
         [('Easy', 400), ('Medium', 900), ('Hard', 1750)],
@@ -42,6 +41,7 @@ def open_pause_menu(surface, game):
         onchange=lambda enabled: toggle_ai(enabled, game)
     )
     pause_menu.add.label('')
+    pause_menu.add.button('Return To Game'.replace(" ", " \t "), pause_menu.disable)
     pause_menu.add.button('Return To Main Menu'.replace(" ", " \t "), lambda: return_to_main_menu(pause_menu,  game))
     
     pause_menu.mainloop(surface, bgfun=lambda: draw_main_menu_background(surface, menu_type='pause'))
