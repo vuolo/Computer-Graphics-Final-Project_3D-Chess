@@ -9,6 +9,11 @@ WINDOW.update({"aspect_ratio": WINDOW["width"] / WINDOW["height"]})
 WINDOW.update({"display": (WINDOW["width"], WINDOW["height"])})
 FRAME_RATE = 244 # FPS
 
+# ~ GUI
+ENABLE_GUI = False
+GUI_WIDTH = 300
+GUI_HEIGHT = int(GUI_WIDTH * 0.4) # WINDOW["height"]
+
 # ~ Stockfish
 STOCKFISH_PATH_WINDOWS = './stockfish/stockfish-windows-x86-64-avx2.exe'
 STOCKFISH_PATH_LINUX = './stockfish/stockfish' # MacOS/Linux
@@ -23,6 +28,7 @@ MAIN_MENU_BACKGROUND_IMAGE = 'images/menu/3.png'
 SETTINGS_MENU_BACKGROUND_IMAGE = 'images/menu/4.png'
 STORE_MENU_BACKGROUND_IMAGE = 'images/menu/1.png'
 PAUSE_MENU_BACKGROUND_IMAGE = 'images/menu/2.png'
+PROMOTE_PAWN_BACKGROUND_IMAGE = 'images/menu/promote_pawn.png'
 DEFAULT_PIECE_SELECTION = 0 # 0 := classic, 1 := wood, 2 := metal
 
 # ~ Pieces
@@ -77,6 +83,7 @@ HUD_TEXT_EXAMPLE_TEXTURE_PATH = 'models/hud_items/text_example.png'
 ROTATE_CAMERA_EVENT = USEREVENT + 1
 DISABLE_INVALID_MOVE_SQUARE_EVENT = USEREVENT + 2
 DELAYED_MOVE_SOUND_EVENT = USEREVENT + 3
+RESET_GAME_EVENT = USEREVENT + 4
 
 INVALID_MOVE_SQUARE_FLASH_DURATION = 500 # ms
 MOUSE_POSITION_DELTA = 2.1 # Delta that determines a click, in pixels

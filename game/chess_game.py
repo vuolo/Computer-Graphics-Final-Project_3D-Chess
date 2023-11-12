@@ -4,7 +4,7 @@ from stockfish import Stockfish
 import platform
 
 # Local application imports.
-from constants import STOCKFISH_PATH_WINDOWS, STOCKFISH_PATH_LINUX, AI_OPPONENT_DEFAULT_ENABLED, AI_OPPONENT_DEFAULT_ELO, DEFAULT_PIECE_SELECTION
+from constants import STOCKFISH_PATH_WINDOWS, STOCKFISH_PATH_LINUX, AI_OPPONENT_DEFAULT_ENABLED, AI_OPPONENT_DEFAULT_ELO, DEFAULT_PIECE_SELECTION, PIECE_ABR_DICT
 
 class ChessGame:
     def __init__(self, game_settings=None):
@@ -32,6 +32,9 @@ class ChessGame:
         # Menu settings.
         self.go_to_main_menu = False
         
+        # Promote pawn settings.
+        self.pawn_promotion_selection = None
+        
     # ~ Settings
     def get_settings(self):
         return {
@@ -39,6 +42,13 @@ class ChessGame:
             "ai_elo": self.get_ai_elo(),
             "selected_piece": self.get_piece_selection()
         }
+        
+    # ~ Pawn Promotion
+    def set_pawn_promotion_selection(self, piece):
+        self.pawn_promotion_selection = PIECE_ABR_DICT[piece.lower()] if piece else None
+        
+    def get_pawn_promotion_selection(self):
+        return self.pawn_promotion_selection
     
     # ~ Piece Selection
     def set_piece_selection(self, piece_selection):
@@ -53,7 +63,7 @@ class ChessGame:
         
     def get_go_to_main_menu(self):
         return self.go_to_main_menu
-        
+
     # ~ AI opponent
     def set_ai_elo(self, elo):
         self.engine.set_skill_level(elo)
@@ -83,7 +93,18 @@ class ChessGame:
         for move in moves: self.board.push(chess.Move.from_uci(move))
 
     def make_move(self, move):
-        if not self.engine.is_move_correct(move): return False
+        if not self.engine.is_move_correct(move):
+            # Check if the move needs pawn promotion.
+            try:
+                if chess.Move.from_uci(move + 'q') in self.board.legal_moves:
+                    if self.pawn_promotion_selection:
+                        move += self.pawn_promotion_selection
+                        self.pawn_promotion_selection = None
+                    else: return 'needs_pawn_promotion' # Ask the user to pick from [q, r, b, n] (queen, rook, bishop, knight).
+            except ValueError:
+                pass
+            
+            return False
         
         # Update both the `stockfish` engine and `python-chess` board.
         self.engine.make_moves_from_current_position([move])

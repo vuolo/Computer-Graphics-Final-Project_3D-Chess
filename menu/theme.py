@@ -3,7 +3,7 @@ import math
 import pygame_menu
 
 # Local application imports.
-from constants import MAIN_MENU_BACKGROUND_IMAGE, SETTINGS_MENU_BACKGROUND_IMAGE, STORE_MENU_BACKGROUND_IMAGE, PAUSE_MENU_BACKGROUND_IMAGE
+from constants import MAIN_MENU_BACKGROUND_IMAGE, SETTINGS_MENU_BACKGROUND_IMAGE, STORE_MENU_BACKGROUND_IMAGE, PAUSE_MENU_BACKGROUND_IMAGE, PROMOTE_PAWN_BACKGROUND_IMAGE
 
 menu_theme = pygame_menu.themes.THEME_SOLARIZED.copy() # Copy a theme to build off of.
 theme_extension = {
@@ -29,6 +29,7 @@ main_menu_background_image = pygame_menu.BaseImage(MAIN_MENU_BACKGROUND_IMAGE)
 settings_menu_background_image = pygame_menu.BaseImage(SETTINGS_MENU_BACKGROUND_IMAGE)
 store_menu_background_image = pygame_menu.BaseImage(STORE_MENU_BACKGROUND_IMAGE)
 pause_menu_background_image = pygame_menu.BaseImage(PAUSE_MENU_BACKGROUND_IMAGE)
+promote_pawn_menu_background_image = pygame_menu.BaseImage(PROMOTE_PAWN_BACKGROUND_IMAGE)
 [setattr(menu_theme, attr, value) for attr, value in theme_extension.items()] # Apply the theme extension.
 
 def draw_main_menu_background(surface, menu_type='main'):
@@ -36,5 +37,6 @@ def draw_main_menu_background(surface, menu_type='main'):
     elif menu_type == 'settings': settings_menu_background_image.draw(surface)
     elif menu_type == 'store': store_menu_background_image.draw(surface)
     elif menu_type == 'pause': pause_menu_background_image.draw(surface)
+    elif menu_type == 'promote_pawn': promote_pawn_menu_background_image.draw(surface)
         
     # TODO: Draw a 3D rotating chessboard with a skybox instead.

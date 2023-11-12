@@ -7,24 +7,26 @@ import chess
 import math
 
 # Local application imports.
-from constants import WINDOW, FRAME_RATE, PIECE_ANIMATION_DURATION, CAMERA_DEFAULT_YAW, CAMERA_DEFAULT_PITCH, CAMERA_ANIMATE_AFTER_MOVE, CAMERA_ANIMATE_AFTER_MOVE_DELAY, ROTATE_CAMERA_EVENT, DISABLE_INVALID_MOVE_SQUARE_EVENT, INVALID_MOVE_SQUARE_FLASH_DURATION, DELAYED_MOVE_SOUND_EVENT
+from constants import WINDOW, FRAME_RATE, PIECE_ANIMATION_DURATION, CAMERA_DEFAULT_YAW, CAMERA_DEFAULT_PITCH, CAMERA_ANIMATE_AFTER_MOVE, CAMERA_ANIMATE_AFTER_MOVE_DELAY, ROTATE_CAMERA_EVENT, DISABLE_INVALID_MOVE_SQUARE_EVENT, INVALID_MOVE_SQUARE_FLASH_DURATION, DELAYED_MOVE_SOUND_EVENT, RESET_GAME_EVENT
 from game.chess_game import ChessGame
 # from graphics.graphics_2d import pixel_to_board_coords, board_coords_to_notation, display_endgame_message, display_turn_indicator
 from graphics.graphics_3d import handle_mouse_events, create_piece_animation, start_camera_rotation_animation #, get_ray_from_mouse, intersect_ray_with_plane, determine_square_from_intersection
 from util.game import notation_to_coords
+from util.guiV3 import SimpleGUI
+from util.gui_ext import setup_gui
 
 pygame.mixer.init()
 
 # Global variables.
 game: Optional['ChessGame'] = None
+gui: Optional['SimpleGUI'] = None
 clock: Optional['pygame.time.Clock'] = None
 selected_square: Optional[str] = None  # Keep track of the user-selected square.
 valid_move_squares: Optional[List[Tuple[int, int]]] = None # Displays highlighted squares that the user can move to.
-highlighted_square: Tuple[int, int] = (0, 0)  # Currently highlighted square coordinates (file, rank)
+highlighted_square: Tuple[int, int] = notation_to_coords('d2')  # Currently highlighted square coordinates (file, rank)
 last_highlighted_white: Tuple[int, int] = notation_to_coords('d2')
 last_highlighted_black: Tuple[int, int] = notation_to_coords('e7')
 is_selected: bool = False  # State to track if a square is selected
-mouse_click_detected: bool = False
 end_move_sound = pygame.mixer.Sound('./sounds/end_move.mp3')
 start_move_sound = pygame.mixer.Sound('./sounds/start_move.mp3')
 side_to_rotate_to = None
@@ -34,6 +36,7 @@ invalid_move_square = None
 def gameplay_setup(game_settings=None):
     global game, clock, highlighted_square, last_highlighted_white, last_highlighted_black
     game = ChessGame(game_settings)
+    gui = setup_gui(game)
     
     # Initialize pygame.
     pygame.init()
@@ -44,13 +47,19 @@ def gameplay_setup(game_settings=None):
     # Set the initial highlighted square based on the player's turn
     highlighted_square = last_highlighted_white if game.get_whos_turn() == "white" else last_highlighted_black
     
-    return game
+    return game, gui
 
 # ~ Game loop
 def pre_draw_gameloop():
-    global clock, highlighted_square, selected_square, valid_move_squares, is_selected, mouse_click_detected, invalid_move_square
+    global clock, highlighted_square, selected_square, valid_move_squares, is_selected, invalid_move_square
     clock.tick(FRAME_RATE)
     events = pygame.event.get()
+    
+    # Check if awaiting a successful pawn promotion.
+    pawn_promotion_selection = game.get_pawn_promotion_selection()
+    if pawn_promotion_selection:
+        process_move(highlighted_square, pawn_promotion_selection)
+        game.set_pawn_promotion_selection(None)
     
     for event in events:
         if event.type == pygame.QUIT:
@@ -63,7 +72,9 @@ def pre_draw_gameloop():
             elif event.key == pygame.K_a or event.key == pygame.K_LEFT: highlighted_square = move_highlighted_square('left')
             elif event.key == pygame.K_d or event.key == pygame.K_RIGHT: highlighted_square = move_highlighted_square('right')
             elif event.key == pygame.K_SPACE or event.key == pygame.K_RETURN:
-                if is_selected: process_move(highlighted_square)
+                if is_selected:
+                    result = process_move(highlighted_square, pawn_promotion_selection)
+                    if result == 'needs_pawn_promotion': return result
                 else: select_square(highlighted_square)
                 is_selected = not is_selected
             elif event.key == pygame.K_BACKSPACE:
@@ -82,6 +93,14 @@ def pre_draw_gameloop():
 
         elif event.type == DELAYED_MOVE_SOUND_EVENT:
             end_move_sound.play()
+            
+        elif event.type == RESET_GAME_EVENT:
+            highlighted_square = notation_to_coords('d2')
+            last_highlighted_white = notation_to_coords('d2')
+            last_highlighted_black = notation_to_coords('e7')
+            selected_square = False
+            is_selected = False
+            invalid_move_square = None
                 
     handle_mouse_events(events, handle_mouse_click)
     attempt_move_ai_opponent()
@@ -171,24 +190,26 @@ def move_highlighted_square(direction: str) -> Tuple[int, int]:
 
     return (file, rank)
     
-def process_move(target_square: Tuple[int, int]):
+def process_move(target_square: Tuple[int, int], pawn_promotion_selection=None):
     global selected_square, valid_move_squares
     
     if selected_square:
         from_square_name = chess.SQUARE_NAMES[selected_square[1] * 8 + selected_square[0]]
         to_square_name = chess.SQUARE_NAMES[target_square[1] * 8 + target_square[0]]
-        move = f"{from_square_name}{to_square_name}"
+        move = f"{from_square_name}{to_square_name}{pawn_promotion_selection if pawn_promotion_selection else ''}"
 
         # Capture the piece object before making the move
         piece = game.board.piece_at(chess.parse_square(from_square_name))
         piece_symbol = piece.symbol() if piece else None
 
-        if game.make_move(move):
+        result = game.make_move(move)
+        if result == 'needs_pawn_promotion': return result
+        elif result == True:
             # Use the captured piece object for the animation
             start_time = pygame.time.get_ticks() / 1000.0
             create_piece_animation(from_square_name, to_square_name, piece_symbol, start_time, PIECE_ANIMATION_DURATION)
             post_successful_move_processing(move, target_square)
-        else:
+        elif result == False:
             print(f"Invalid move: {move}")
             set_invalid_move_square(target_square)
     

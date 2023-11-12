@@ -20,9 +20,12 @@ from util.cubemap import load_cubemap_textures, load_texture
 from util.game import notation_to_coords
 from util.objLoaderV4 import ObjLoader
 from util.shaderLoaderV3 import ShaderProgram
+from util.guiV3 import SimpleGUI
+from util.gui_ext import prepare_gui, update_gui
 
 # Global variables.
 game: Optional['ChessGame'] = None
+gui: Optional['SimpleGUI'] = None
 chessboard: dict = MODEL_TEMPLATE.copy()
 highlighted_square_model: dict = MODEL_TEMPLATE.copy()
 selected_square_model: dict = MODEL_TEMPLATE.copy()
@@ -60,9 +63,10 @@ intro_animation_started = CAMERA_USE_INTRO_ANIMATION
 intro_animation_time = 0
 intro_keyframes = build_intro_camera_animations(yaw, pitch, camera_distance)["20"] # Change from range 1 to 23 for varying intro camera animations
 current_intro_keyframe = 0
-# (Piece animation):
+# ~ Piece animation:
 piece_animations = {}
 # ~ Hud text
+hudShaderProgram: Optional[ShaderProgram] = None
 hud_text_model: dict = MODEL_TEMPLATE.copy()
 # ~ Indicators
 indicator_squares = {
@@ -89,13 +93,15 @@ for key, nested_values in indicator_square_ext.items():
             indicator_squares[key][nested_key] = nested_value
 
 # ~ Main
-def setup_3d_graphics(new_game):
-    global game, shaderProgram, intro_animation_started
+def setup_3d_graphics(new_game, new_gui, is_resume=False):
+    global game, gui, shaderProgram, intro_animation_started
     game = new_game
+    gui = new_gui
     
     # Reset the intro animation (if enabled).
-    intro_animation_started = CAMERA_USE_INTRO_ANIMATION
-    start_intro_camera_animation()
+    if not is_resume:
+        intro_animation_started = CAMERA_USE_INTRO_ANIMATION
+        start_intro_camera_animation()
     
     # Set up OpenGL context's major and minor version numbers.
     pygame.display.gl_set_attribute(GL_CONTEXT_MAJOR_VERSION, 3)
@@ -108,6 +114,7 @@ def setup_3d_graphics(new_game):
         pygame.display.gl_set_attribute(pygame.GL_CONTEXT_FORWARD_COMPATIBLE_FLAG, True)
     
     screen = pygame.display.set_mode(WINDOW["display"], DOUBLEBUF | OPENGL)
+    prepare_gui(gui, game)
     
     # Set the background color to a medium dark shade of cyan-blue: #4c6680
     glClearColor(0.3, 0.4, 0.5, 1.0)
@@ -126,13 +133,16 @@ def setup_3d_graphics(new_game):
     setup_skybox()
     setup_highlights()
     setup_indicators()
-    setup_hud_text()
+    
+    # Setup the HUD text.
+    # setup_hudShaderProgram()
+    # setup_hud_text()
     
     return screen
 
 # ~ Graphics
-def draw_graphics(delta_time, game, highlighted_square, selected_square, valid_move_squares, invalid_move_square):
-    global intro_animation_started
+def draw_graphics(delta_time, highlighted_square, selected_square, valid_move_squares, invalid_move_square):
+    global game, gui, intro_animation_started
     if not intro_animation_started: update_camera_animation(delta_time)
     
     # Prepare the 3D scene.
@@ -147,7 +157,10 @@ def draw_graphics(delta_time, game, highlighted_square, selected_square, valid_m
     draw_skybox()
     
     # Draw text on top of the 3D scene.
+    # draw_text("Sample Text", WINDOW["width"] / 2, WINDOW["height"] / 2)
     # draw_hud_text()
+    
+    update_gui(gui, game)
     
 def draw_highlights(highlighted_square, selected_square, valid_move_squares, invalid_move_square):
     global highlighted_square_model, selected_square_model, valid_move_square_model
@@ -194,6 +207,13 @@ def cleanup_graphics():
     glDeleteProgram(skybox["shaderProgram"].shader)
 
 # ~ HUD text
+# def draw_text(text, x, y, font_size=32, color=(255, 255, 255)):
+#     font = pygame.font.SysFont('arial', 64)
+#     textSurface = font.render(text, True, color).convert_alpha()
+#     textData = pygame.image.tostring(textSurface, "RGBA", True)
+#     glWindowPos2d(x, y)
+#     glDrawPixels(textSurface.get_width(), textSurface.get_height(), GL_RGBA, GL_UNSIGNED_BYTE, textData)
+    
 def setup_hud_text():
     global hud_text_model
     hud_text_model["obj"] = ObjLoader(HUD_TEXT_MODEL_OBJECT_PATH)
@@ -237,48 +257,111 @@ def setup_hud_text():
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, hud_text_model["texture"]["texture_size"]["width"], hud_text_model["texture"]["texture_size"]["height"],
                  0, GL_RGB, GL_UNSIGNED_BYTE, hud_text_model["texture"]["texture_pixels"])
 
-# TODO: make this draw properly in front of the camera
-def draw_hud_text():
-    global hud_text_model, view_matrix, projection_matrix, rotated_eye, shaderProgram
+# # It's recommend to draw head-up display elements using orthographic projection.
+# # • Source: https://stackoverflow.com/a/54086253
+# def draw_hud_text():
+#     # # Apply the projection matrix to the projection matrix stack and the model matrix to the model view matrix stack.
+#     # # • See glMatrixMode (https://www.khronos.org/registry/OpenGL-Refpages/gl2.1/xhtml/glMatrixMode.xml):
+#     # glMatrixMode(GL_PROJECTION)
+#     # gluPerspective(45, (WINDOW['width'] / WINDOW['height']), 0.1, 100.0)
+
+#     # glMatrixMode(GL_MODELVIEW)
+#     # glTranslatef(0.0, 0.0, -5)
     
-    # Get the inverse of the view matrix to obtain the camera's orientation.
-    inv_view_matrix = np.linalg.inv(view_matrix)
+#     # # Since the cross hair always should be on top of the view, you have to disable the depth test.
+#     # glDisable(GL_DEPTH_TEST)
 
-    # Calculate a position in front of the camera.
-    # This position is relative to the near plane.
-    hud_distance = near_plane + 0.1  # Slightly in front of the near plane to avoid clipping.
-    hud_position = np.array([0, 0, -hud_distance, 1])  # In the camera's local space.
+#     # mX, mY = pygame.mouse.get_pos()
+#     # Crosshair(mX, 600-mY, 20)
 
-    # Transform the position to world space using the inverse view matrix.
-    hud_position_world = inv_view_matrix @ hud_position
+#     # glEnable(GL_DEPTH_TEST)
+    
+#     # # Likely you can change the depth function (glDepthFunc) to GL_ALWAYS and change the glDepthMask.
+    
+#     # # Use glLoadIdentity to lad the identity matrix and use glOrtho to set up an orthographic projection 1:1 to window coordinates;
+#     # glLoadIdentity()
+#     # glOrtho(0.0, WINDOW['width'], 0.0, WINDOW['height'], -1.0, 1.0)
+    
+#     # # Use glPushMatrix/glPopMatrix to store and restore the matrixes on the matrix stack:
+#     pass
+  
+def create_orthographic_projection_matrix():
+    left, right = 0, WINDOW["width"]
+    bottom, top = 0, WINDOW["height"]
+    near, far = -1, 1
+    return pyrr.matrix44.create_orthogonal_projection_matrix(left, right, bottom, top, near, far)
 
-    # Calculate the scale for the HUD text.
-    hud_scale = 0.15  # Adjust this value as needed for a suitable size.
-    hud_scale_matrix = pyrr.matrix44.create_from_scale([hud_scale, hud_scale, hud_scale])
+def draw_hud_text():
+    global hud_text_model, hudShaderProgram
 
-    # Create a rotation matrix to rotate the HUD text by 90 degrees around the x-axis.
-    hud_rotation_matrix = pyrr.matrix44.create_from_x_rotation(np.radians(90))
+    # Use the shader program for HUD
+    glUseProgram(hudShaderProgram.shader)
 
-    # Create a translation matrix to position the HUD text in front of the camera.
-    hud_translation_matrix = pyrr.matrix44.create_from_translation(hud_position_world[:3])
+    # Create Orthographic Projection Matrix
+    ortho_projection = create_orthographic_projection_matrix()
 
-    # Combine the scale, rotation, and translation transformations.
-    hud_model_matrix = pyrr.matrix44.multiply(hud_scale_matrix, hud_rotation_matrix)
-    hud_model_matrix = pyrr.matrix44.multiply(hud_model_matrix, hud_translation_matrix)
+    # Update shader uniforms
+    hudShaderProgram["model_matrix"] = hud_text_model["model_matrix"]
+    hudShaderProgram["projection_matrix"] = ortho_projection
 
-    # Send the model matrix to the shader.
-    shaderProgram["model_matrix"] = hud_model_matrix
-    shaderProgram["view_matrix"] = np.eye(4)  # Use an identity matrix for the view matrix.
-    shaderProgram["projection_matrix"] = projection_matrix
-    shaderProgram["eye_pos"] = rotated_eye
+    # Disable Depth Test
+    glDisable(GL_DEPTH_TEST)
 
-    # Bind the object's texture.
+    # Bind texture
     glActiveTexture(GL_TEXTURE0)
     glBindTexture(GL_TEXTURE_2D, hud_text_model["texture"]["texture_id"])
 
-    # Draw the object.
+    # Draw the HUD Text
     glBindVertexArray(hud_text_model["vao"])
     glDrawArrays(GL_TRIANGLES, 0, hud_text_model["obj"].n_vertices)
+
+    # Re-enable Depth Test
+    glEnable(GL_DEPTH_TEST)
+
+    # Unbind shader program
+    glUseProgram(0)
+    
+# def draw_hud_text():
+#     global hud_text_model, view_matrix, projection_matrix, rotated_eye, shaderProgram
+    
+#     # Get the inverse of the view matrix to obtain the camera's orientation.
+#     inv_view_matrix = np.linalg.inv(view_matrix)
+
+#     # Calculate a position in front of the camera.
+#     # This position is relative to the near plane.
+#     hud_distance = near_plane + 0.1  # Slightly in front of the near plane to avoid clipping.
+#     hud_position = np.array([0, 0, -hud_distance, 1])  # In the camera's local space.
+
+#     # Transform the position to world space using the inverse view matrix.
+#     hud_position_world = inv_view_matrix @ hud_position
+
+#     # Calculate the scale for the HUD text.
+#     hud_scale = 0.15  # Adjust this value as needed for a suitable size.
+#     hud_scale_matrix = pyrr.matrix44.create_from_scale([hud_scale, hud_scale, hud_scale])
+
+#     # Create a rotation matrix to rotate the HUD text by 90 degrees around the x-axis.
+#     hud_rotation_matrix = pyrr.matrix44.create_from_x_rotation(np.radians(90))
+
+#     # Create a translation matrix to position the HUD text in front of the camera.
+#     hud_translation_matrix = pyrr.matrix44.create_from_translation(hud_position_world[:3])
+
+#     # Combine the scale, rotation, and translation transformations.
+#     hud_model_matrix = pyrr.matrix44.multiply(hud_scale_matrix, hud_rotation_matrix)
+#     hud_model_matrix = pyrr.matrix44.multiply(hud_model_matrix, hud_translation_matrix)
+
+#     # Send the model matrix to the shader.
+#     shaderProgram["model_matrix"] = hud_model_matrix
+#     shaderProgram["view_matrix"] = np.eye(4)  # Use an identity matrix for the view matrix.
+#     shaderProgram["projection_matrix"] = projection_matrix
+#     shaderProgram["eye_pos"] = rotated_eye
+
+#     # Bind the object's texture.
+#     glActiveTexture(GL_TEXTURE0)
+#     glBindTexture(GL_TEXTURE_2D, hud_text_model["texture"]["texture_id"])
+
+#     # Draw the object.
+#     glBindVertexArray(hud_text_model["vao"])
+#     glDrawArrays(GL_TRIANGLES, 0, hud_text_model["obj"].n_vertices)
     
 # ~ Shader setup
 def setup_generic_shaderProgram():
@@ -290,6 +373,15 @@ def setup_generic_shaderProgram():
     # Assign the texture units to the shader.
     shaderProgram["tex2D"] = 0
     shaderProgram["cubeMapTex"] = 1
+    
+def setup_hudShaderProgram():
+    global hudShaderProgram
+    
+    # Create a new HUD shader program (compiles the hud's shaders).
+    hudShaderProgram = ShaderProgram("shaders/hud/vert.glsl", "shaders/hud/frag.glsl")
+    
+    # Assign the texture units to the shader.
+    hudShaderProgram["tex2D"] = 0
     
 # ~ Animations
 def update_animations(delta_time):
@@ -737,12 +829,6 @@ def draw_at_board_position(model, row, col):
     # Draw the piece.
     glBindVertexArray(model["vao"])
     glDrawArrays(GL_TRIANGLES, 0, model["obj"].n_vertices)
-
-# ~ Selected piece
-
-
-# ~ Valid moves
-
            
 # ~ Skybox
 def setup_skybox():
