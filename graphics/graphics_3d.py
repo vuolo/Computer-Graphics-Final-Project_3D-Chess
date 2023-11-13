@@ -36,6 +36,7 @@ invalid_move_square_model: dict = MODEL_TEMPLATE.copy()
 pieces: dict = { color: { piece: MODEL_TEMPLATE.copy() for piece in PIECES } for color in PIECE_COLORS }
 skybox: dict = {}
 shaderProgram: Optional[ShaderProgram] = None
+shaderProgram_shadowMap: Optional[ShaderProgram] = None
 invalid_move_sound = pygame.mixer.Sound('./sounds/invalid-move.mp3')
 
 # ~ Camera
@@ -48,6 +49,10 @@ up = np.array([0, 1, 0]) # Make the camera's "up" direction the positive y-axis.
 near_plane = 0.1
 far_plane = 15
 fov = 45
+# Light
+light_pos = [1, 4, 1]
+light_view_mat: Optional[np.ndarray] = None
+light_projection_mat: Optional[np.ndarray] = None
 # (Mouse dragging - rotate around the board - uses yaw/pitch instead of angleX/angleY):
 is_dragging = False
 last_mouse_pos: Tuple[int, int] = (0, 0)
@@ -137,6 +142,7 @@ def setup_3d_graphics(new_game, new_gui, is_resume=False):
     setup_highlights()
     setup_indicators()
     
+    setup_shadow_shader()
     # Setup the HUD text.
     # setup_hudShaderProgram()
     # setup_hud_text()
@@ -150,7 +156,7 @@ def draw_graphics(delta_time, highlighted_square, selected_square, valid_move_sq
     
     # Prepare the 3D scene.
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-
+    render_shadow_map()
     # Draw the 3D scene.
     update_graphics(delta_time)
     draw_chessboard()
@@ -164,6 +170,93 @@ def draw_graphics(delta_time, highlighted_square, selected_square, valid_move_sq
     # draw_hud_text()
     
     update_gui(gui, game)
+
+def setup_shadow_shader():
+    global shaderProgram_shadowMap, light_view_mat, light_projection_mat
+    light_view_mat = pyrr.matrix44.create_look_at(light_pos, target, up)
+    light_projection_mat = pyrr.matrix44.create_perspective_projection_matrix(fov, WINDOW["width"]/WINDOW["height"], near_plane, far_plane)
+    shaderProgram_shadowMap = ShaderProgram("shaders/shadowMap/vert.glsl", "shaders/shadowMap/frag.glsl")
+
+def create_framebuffer_with_depth_attachment(width, height):
+    # Create a framebuffer object
+    framebuffer_id = glGenFramebuffers(1)
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_id)
+
+    # Create a texture object for the depth attachment
+    depthTex_id = glGenTextures(1)
+    glBindTexture(GL_TEXTURE_2D, depthTex_id)
+
+    # Define texture parameters
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, None)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)  # Set texture filtering parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+
+    # Attach the depth texture to the framebuffer
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTex_id, 0)
+
+    # Tell OpenGL which color attachments we'll use (of this framebuffer) for rendering.
+    # We won't be using any color attachments so we can tell OpenGL that we're not going to bind any color attachments.
+    # So set the draw and read buffer to none
+    glDrawBuffer(GL_NONE)
+    glReadBuffer(GL_NONE)
+
+    # Check if framebuffer is complete
+    if glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE:
+        raise Exception("Framebuffer is not complete!")
+
+    # Unbind the framebuffer
+    glBindFramebuffer(GL_FRAMEBUFFER, 0)
+
+    return framebuffer_id, depthTex_id
+
+def render_shadow_map():
+    global pieces, chessboard
+    board_array = game.get_2d_board_array()
+    # Assuming 'piece_models' is a dictionary of unique piece models
+    # 'board_array' is a 2D array representing the board state
+    framebuffer_id, _ = create_framebuffer_with_depth_attachment(WINDOW["width"], WINDOW["height"])
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer_id)
+    glClear(GL_DEPTH_BUFFER_BIT)
+
+    glUseProgram(shaderProgram_shadowMap.shader)
+    shaderProgram_shadowMap["viewMatrix"] = light_view_mat
+    shaderProgram_shadowMap["projectionMatrix"] = light_projection_mat
+
+    # Draw each piece on the board
+    for row in range(len(board_array)):
+        for col in range(len(board_array[row])):
+            piece = board_array[row][col]
+            if piece:
+                # Determine the color and type of the piece.
+                color = 'white' if piece.value.isupper() else 'black'
+                piece_type = PIECE_ABR_DICT[piece.value.lower()]
+                piece_model = pieces[color][piece_type]
+                piece_model['color'] = color
+
+                model_matrix = calculate_model_matrix_for_piece(piece_model, row, col)  # Calculate based on board position
+                shaderProgram_shadowMap["modelMatrix"] = model_matrix
+                glBindVertexArray(piece_model["vao"])
+                glDrawArrays(GL_TRIANGLES, 0, piece_model["obj"].n_vertices)
+
+    # Draw the board
+    shaderProgram_shadowMap["modelMatrix"] = chessboard["model_matrix"]
+    glBindVertexArray(chessboard["vao"])
+    glDrawArrays(GL_TRIANGLES, 0, chessboard["obj"].n_vertices)
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0)
+    return framebuffer_id
+
+def calculate_model_matrix_for_piece(model, row, col):
+    # Calculate the piece's model matrix based on its position on the board.
+    offset_x, offset_z, square_size = 0, 0, 1.575
+    position = np.array([
+        (col - 3.5) * square_size + offset_x, 
+        0, 
+        (row - 3.5) * square_size + offset_z
+    ])
+    translation_matrix = pyrr.matrix44.create_from_translation(position)
+    model_matrix = pyrr.matrix44.multiply(translation_matrix, model["model_matrix"])
+    return model_matrix
     
 def draw_highlights(highlighted_square, selected_square, valid_move_squares, invalid_move_square):
     global highlighted_square_model, selected_square_model, valid_move_square_model
