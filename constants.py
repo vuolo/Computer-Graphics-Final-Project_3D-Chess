@@ -78,6 +78,10 @@ CAMERA_ANIMATE_AFTER_MOVE_DELAY = 1200 # ms
 
 # ~ Piece animation
 PIECE_ANIMATION_DURATION = 1.0 # seconds
+DISPLAY_TURN = False
+BLACK_TURN_GLOW_COLOR = [1.0, 1.0, 0.0]  # Yellow for black king
+WHITE_TURN_GLOW_COLOR = [0.0, 0.0, 1.0]  # Blue for white king
+CHECK_TURN_GLOW_COLOR = [1.0, 0.0, 0.0]  # Red for both when in check
 
 # ~ HUD items
 HUD_TEXT_MODEL_OBJECT_PATH = 'models/hud_items/hud_text.obj'

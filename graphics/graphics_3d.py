@@ -15,7 +15,7 @@ import platform
 from graphics.graphics_2d import setup_2d_graphics
 from game.chess_game import ChessGame
 from graphics.animation import ease_in_out, add_shake, build_intro_camera_animations
-from constants import WINDOW, PIECES, PIECE_ABR_DICT, PIECE_COLORS, MODEL_TEMPLATE, CHESSBOARD_OBJECT_PATH, CLASSIC_CHESSBOARD_TEXTURE_PATH, WOOD_CHESSBOARD_TEXTURE_PATH, RGB_CHESSBOARD_TEXTURE_PATH, SQUARE_OBJECT_PATH, HIGHLIGHTED_SQUARE_TEXTURE_PATH, SELECTED_SQUARE_TEXTURE_PATH, VALID_MOVES_SQUARE_TEXTURE_PATH, INVALID_MOVE_SQUARE_TEXTURE_PATH, SKYBOX_PATH,PIECE_OBJECT_PATHS, CLASSIC_PIECE_TEXTURE_PATHS, WOOD_PIECE_TEXTURE_PATHS, METAL_PIECE_TEXTURE_PATHS, CAMERA_MOUSE_DRAG_SENSITIVITY, CAMERA_DEFAULT_YAW, CAMERA_DEFAULT_PITCH, CAMERA_MIN_DISTANCE, CAMERA_MAX_DISTANCE, CAMERA_DEFAULT_ANIMATION_SPEED, CAMERA_USE_INTRO_ANIMATION, MOUSE_POSITION_DELTA, CAMERA_ZOOM_SCROLL_SENSITIVITY, HUD_TEXT_MODEL_OBJECT_PATH, HUD_TEXT_EXAMPLE_TEXTURE_PATH
+from constants import WINDOW, PIECES, PIECE_ABR_DICT, PIECE_COLORS, MODEL_TEMPLATE, CHESSBOARD_OBJECT_PATH, CLASSIC_CHESSBOARD_TEXTURE_PATH, WOOD_CHESSBOARD_TEXTURE_PATH, RGB_CHESSBOARD_TEXTURE_PATH, SQUARE_OBJECT_PATH, HIGHLIGHTED_SQUARE_TEXTURE_PATH, SELECTED_SQUARE_TEXTURE_PATH, VALID_MOVES_SQUARE_TEXTURE_PATH, INVALID_MOVE_SQUARE_TEXTURE_PATH, SKYBOX_PATH,PIECE_OBJECT_PATHS, CLASSIC_PIECE_TEXTURE_PATHS, WOOD_PIECE_TEXTURE_PATHS, METAL_PIECE_TEXTURE_PATHS, CAMERA_MOUSE_DRAG_SENSITIVITY, CAMERA_DEFAULT_YAW, CAMERA_DEFAULT_PITCH, CAMERA_MIN_DISTANCE, CAMERA_MAX_DISTANCE, CAMERA_DEFAULT_ANIMATION_SPEED, CAMERA_USE_INTRO_ANIMATION, MOUSE_POSITION_DELTA, CAMERA_ZOOM_SCROLL_SENSITIVITY, HUD_TEXT_MODEL_OBJECT_PATH, HUD_TEXT_EXAMPLE_TEXTURE_PATH, BLACK_TURN_GLOW_COLOR, WHITE_TURN_GLOW_COLOR, CHECK_TURN_GLOW_COLOR, DISPLAY_TURN
 from util.cubemap import load_cubemap_textures, load_texture
 from util.game import notation_to_coords
 from util.objLoaderV4 import ObjLoader
@@ -155,7 +155,7 @@ def draw_graphics(delta_time, highlighted_square, selected_square, valid_move_sq
     update_graphics(delta_time)
     draw_chessboard()
     draw_highlights(highlighted_square, selected_square, valid_move_squares, invalid_move_square)
-    draw_indicators(game)
+    # draw_indicators(game)
     draw_pieces()
     draw_skybox()
     
@@ -767,6 +767,25 @@ def draw_pieces():
                 piece_model = pieces[color][piece_type]
                 piece_model['color'] = color
 
+                # Glowing effect for King to show turn/check
+                if(piece_type == "king" and DISPLAY_TURN):
+                    is_white_turn = game.board.turn == chess.WHITE
+                    is_in_check = game.board.is_check()
+                    if is_white_turn and color == 'white':
+                        if is_in_check:
+                            shaderProgram["glowColor"] = CHECK_TURN_GLOW_COLOR
+                        else:
+                            shaderProgram["glowColor"] = WHITE_TURN_GLOW_COLOR
+                        shaderProgram["isGlowing"] = True
+                        shaderProgram["time"] = pygame.time.get_ticks() / 1000.0
+                    elif not is_white_turn and color == 'black':
+                        if is_in_check:
+                            shaderProgram["glowColor"] = CHECK_TURN_GLOW_COLOR
+                        else:
+                            shaderProgram["glowColor"] = BLACK_TURN_GLOW_COLOR
+                        shaderProgram["isGlowing"] = True
+                        shaderProgram["time"] = pygame.time.get_ticks() / 1000.0
+
                 # Determine the square name (e.g., 'e2')
                 square_name = chr(col + ord('a')) + str(8 - row)
 
@@ -776,6 +795,7 @@ def draw_pieces():
                     draw_piece_at_position(piece_model, animation["current_position"])
                 else:
                     draw_at_board_position(piece_model, row, col)
+                shaderProgram["isGlowing"] = False
 
 def draw_piece_at_position(piece_model, position):
     global view_matrix, projection_matrix, rotated_eye, shaderProgram
@@ -900,7 +920,7 @@ def draw_skybox():
     glDepthFunc(GL_LESS)
     
 # ~ Mouse events
-def handle_mouse_events(events, on_click_callback):
+def handle_mouse_events(events):
     global is_dragging, last_mouse_pos, first_mouse_pos, yaw, pitch, camera_distance
 
     for event in events:
@@ -920,7 +940,7 @@ def handle_mouse_events(events, on_click_callback):
                 delta_y = current_mouse_pos[1] - first_mouse_pos[1]
                 delta_maginitude = math.sqrt(delta_x**2 + delta_y**2)
                 if delta_maginitude < MOUSE_POSITION_DELTA:
-                    x, y = current_mouse_pos
+                    pass # Handle click event here
                 is_dragging = False
         elif event.type == pygame.MOUSEMOTION:
             if is_dragging:
@@ -934,125 +954,4 @@ def handle_mouse_events(events, on_click_callback):
                 pitch -= np.deg2rad(dy * CAMERA_MOUSE_DRAG_SENSITIVITY)
 
                 # Clamp pitch to prevent flipping.
-                pitch = max(min(pitch, np.deg2rad(89)), np.deg2rad(-89))                
-
-# def handle_ray_tracing(x, y):
-#     ray_origin, ray_direction = get_ray_from_mouse(x, y)
-#     print(f"Ray: {ray_origin, ray_direction}")
-#     intersect_ray_with_object(ray_origin, ray_direction)
-#     # intersect = intersect_ray_with_plane(ray_origin, ray_direction, np.array([0,0,0]), up)
-#     # #print(f"Intersect: {intersect}")
-
-#     # if intersect is not None:
-#     #     # Step 4: Determine the chessboard square from the intersection
-#     #     chess_square = determine_square_from_intersection(intersect)
-#     #     print(f"Chess Square: {chess_square}")
-#     #     return chess_square
-#     # else:
-#     #     print("No intersection with the chessboard.")
-#     #     return None
-
-# # # ~ TODO: Mouse raycasting (for click detection)
-# def get_ray_from_mouse(mouse_x, mouse_y):
-#     global view_matrix
-#     # Convert mouse position to normalized device coordinates (NDC)
-#     ndc_x = (2.0 * mouse_x) / WINDOW["width"] - 1.0
-#     ndc_y = 1.0 - (2.0 * mouse_y) / WINDOW["height"]
-#     ndc = np.array([ndc_x, ndc_y, 1.0, 1.0])  # Using 1.0 for z and w
-
-#     # Transform NDC to eye coordinates
-#     eye_coords = np.linalg.inv(projection_matrix) @ ndc
-#     eye_coords = np.array([eye_coords[0], eye_coords[1], -1.0, 0.0])  # Direction vector
-
-#     # Transform eye coordinates to world coordinates
-#     world_coords = np.linalg.inv(view_matrix) @ eye_coords
-#     world_coords /= np.linalg.norm(world_coords[0:3])  # Normalize the direction vector
-
-#     # Ray origin (camera position in world space) and direction
-#     ray_origin = np.linalg.inv(view_matrix) @ np.array([0, 0, 0, 1])  # Camera's position in world space
-#     ray_direction = world_coords[0:3]
-
-#     return ray_origin[0:3], ray_direction
-
-# def intersect_ray_with_object(ray_origin, ray_direction):
-#     global chessboard
-#     # Transform the ray to the object's local space
-#     inv_model_matrix = np.linalg.inv(chessboard["model_matrix"])
-#     local_ray_origin = inv_model_matrix @ np.append(ray_origin, 1)
-#     local_ray_direction = inv_model_matrix @ np.append(ray_direction, 0)
-
-#     # Perform intersection test (e.g., with an AABB representing the object)
-#     # This will vary depending on the shape of your objects
-#     # Return True if intersecting, False otherwise
-#     return is_intersecting(local_ray_origin[0:3], local_ray_direction[0:3], chessboard["bounds"])
-
-# def is_intersecting(ray_origin, ray_direction, bounds):
-#     print(f"bounds: {bounds}")
-#     # # Unpack the bounds
-#     # min_bound, max_bound = bounds
-
-#     # # Initialize t_min and t_max
-#     # t_min = (min_bound[0] - ray_origin[0]) / ray_direction[0]
-#     # t_max = (max_bound[0] - ray_origin[0]) / ray_direction[0]
-
-#     # if t_min > t_max:
-#     #     t_min, t_max = t_max, t_min
-
-#     # for i in range(1, 3):
-#     #     t1 = (min_bound[i] - ray_origin[i]) / ray_direction[i]
-#     #     t2 = (max_bound[i] - ray_origin[i]) / ray_direction[i]
-
-#     #     if t1 > t2:
-#     #         t1, t2 = t2, t1
-
-#     #     if (t_min > t2) or (t1 > t_max):
-#     #         return False
-
-#     #     t_min = max(t_min, t1)
-#     #     t_max = min(t_max, t2)
-
-#     # return t_min < t_max and t_max > 0
-
-
-# def intersect_ray_with_plane(ray_origin, ray_direction, plane_origin, plane_normal):
-#     global chessboard
-#     # Transform the plane origin and normal according to the chessboard's model_matrix
-#     plane_origin = np.array([0, 0, 0, 1])
-#     plane_normal = np.array([0, 1, 0, 0])  # Normal vector pointing upwards
-
-#     transformed_plane_origin = chessboard["model_matrix"] @ plane_origin
-#     transformed_plane_normal = chessboard["model_matrix"] @ plane_normal
-
-#     # Calculate intersection using ray-plane intersection formula
-#     denom = np.dot(ray_direction, transformed_plane_normal[:3])
-#     if np.abs(denom) > 1e-6:
-#         p0l0 = transformed_plane_origin[:3] - ray_origin
-#         t = np.dot(p0l0, transformed_plane_normal[:3]) / denom
-#         if t >= 0:  # Check if the intersection is in the direction of the ray
-#             intersection = ray_origin + t * ray_direction
-#             return intersection
-#     return None
-
-
-# def determine_square_from_intersection(intersection_point):
-#     global chessboard
-#     # Transform the intersection point to the chessboard's local coordinates
-#     local_intersection_point = np.linalg.inv(chessboard["model_matrix"]) @ np.append(intersection_point, 1)
-
-#     # Assuming each square is 1 unit in size in the chessboard's local coordinate system
-#     local_pos_x = local_intersection_point[0] + 4
-#     local_pos_z = local_intersection_point[2] + 4
-
-#     # Normalize the local position to the range [0, 7]
-#     file_index = int(local_pos_x)
-#     rank_index = int(local_pos_z)
-
-#     # Ensure the indices are within the bounds [0, 7]
-#     file_index = min(max(file_index, 0), 7)
-#     rank_index = min(max(rank_index, 0), 7)
-
-#     # Convert the indices to chess notation
-#     file_letter = chr(ord('a') + file_index)
-#     rank_number = str(8 - rank_index)
-
-#     return file_letter + rank_number
+                pitch = max(min(pitch, np.deg2rad(89)), np.deg2rad(-89))
