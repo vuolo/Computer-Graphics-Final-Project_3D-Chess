@@ -15,7 +15,7 @@ import platform
 from graphics.graphics_2d import setup_2d_graphics
 from game.chess_game import ChessGame
 from graphics.animation import ease_in_out, add_shake, build_intro_camera_animations
-from constants import WINDOW, PIECES, PIECE_ABR_DICT, PIECE_COLORS, MODEL_TEMPLATE, CHESSBOARD_OBJECT_PATH, CHESSBOARD_TEXTURE_PATH, SQUARE_OBJECT_PATH, HIGHLIGHTED_SQUARE_TEXTURE_PATH, SELECTED_SQUARE_TEXTURE_PATH, VALID_MOVES_SQUARE_TEXTURE_PATH, INVALID_MOVE_SQUARE_TEXTURE_PATH, SKYBOX_PATH,PIECE_OBJECT_PATHS, CLASSIC_PIECE_TEXTURE_PATHS, WOOD_PIECE_TEXTURE_PATHS, METAL_PIECE_TEXTURE_PATHS, CAMERA_MOUSE_DRAG_SENSITIVITY, CAMERA_DEFAULT_YAW, CAMERA_DEFAULT_PITCH, CAMERA_MIN_DISTANCE, CAMERA_MAX_DISTANCE, CAMERA_DEFAULT_ANIMATION_SPEED, CAMERA_USE_INTRO_ANIMATION, MOUSE_POSITION_DELTA, CAMERA_ZOOM_SCROLL_SENSITIVITY, HUD_TEXT_MODEL_OBJECT_PATH, HUD_TEXT_EXAMPLE_TEXTURE_PATH
+from constants import WINDOW, PIECES, PIECE_ABR_DICT, PIECE_COLORS, MODEL_TEMPLATE, CHESSBOARD_OBJECT_PATH, CLASSIC_CHESSBOARD_TEXTURE_PATH, WOOD_CHESSBOARD_TEXTURE_PATH, RGB_CHESSBOARD_TEXTURE_PATH, SQUARE_OBJECT_PATH, HIGHLIGHTED_SQUARE_TEXTURE_PATH, SELECTED_SQUARE_TEXTURE_PATH, VALID_MOVES_SQUARE_TEXTURE_PATH, INVALID_MOVE_SQUARE_TEXTURE_PATH, SKYBOX_PATH,PIECE_OBJECT_PATHS, CLASSIC_PIECE_TEXTURE_PATHS, WOOD_PIECE_TEXTURE_PATHS, METAL_PIECE_TEXTURE_PATHS, CAMERA_MOUSE_DRAG_SENSITIVITY, CAMERA_DEFAULT_YAW, CAMERA_DEFAULT_PITCH, CAMERA_MIN_DISTANCE, CAMERA_MAX_DISTANCE, CAMERA_DEFAULT_ANIMATION_SPEED, CAMERA_USE_INTRO_ANIMATION, MOUSE_POSITION_DELTA, CAMERA_ZOOM_SCROLL_SENSITIVITY, HUD_TEXT_MODEL_OBJECT_PATH, HUD_TEXT_EXAMPLE_TEXTURE_PATH
 from util.cubemap import load_cubemap_textures, load_texture
 from util.game import notation_to_coords
 from util.objLoaderV4 import ObjLoader
@@ -587,7 +587,15 @@ def setup_chessboard():
     
     # Load the object's texture.
     chessboard["texture"] = {}
-    chessboard["texture"]["texture_pixels"], chessboard["texture"]["texture_size"] = load_texture(CHESSBOARD_TEXTURE_PATH, flip=True)
+    if(game.board_selection == 0):
+        chessboard["texture"]["texture_pixels"], chessboard["texture"]["texture_size"] = load_texture(WOOD_CHESSBOARD_TEXTURE_PATH, flip=True)
+    elif(game.board_selection == 1):
+        chessboard["texture"]["texture_pixels"], chessboard["texture"]["texture_size"] = load_texture(CLASSIC_CHESSBOARD_TEXTURE_PATH, flip=True)
+    elif(game.board_selection == 2):
+        chessboard["texture"]["texture_pixels"], chessboard["texture"]["texture_size"] = load_texture(RGB_CHESSBOARD_TEXTURE_PATH, flip=True)
+
+    
+    
     chessboard["texture"]["texture_id"] = glGenTextures(1)
     glBindTexture(GL_TEXTURE_2D, chessboard["texture"]["texture_id"])
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)

@@ -4,7 +4,7 @@ from stockfish import Stockfish
 import platform
 
 # Local application imports.
-from constants import STOCKFISH_PATH_WINDOWS, STOCKFISH_PATH_LINUX, AI_OPPONENT_DEFAULT_ENABLED, AI_OPPONENT_DEFAULT_ELO, DEFAULT_PIECE_SELECTION, PIECE_ABR_DICT
+from constants import STOCKFISH_PATH_WINDOWS, STOCKFISH_PATH_LINUX, AI_OPPONENT_DEFAULT_ENABLED, AI_OPPONENT_DEFAULT_ELO, DEFAULT_SELECTION, PIECE_ABR_DICT
 
 class ChessGame:
     def __init__(self, game_settings=None):
@@ -24,10 +24,12 @@ class ChessGame:
             self.ai_opponent_enabled = game_settings["ai_opponent_enabled"]
             self.engine.set_skill_level(game_settings["ai_elo"])
             self.piece_selection = game_settings["selected_piece"]
+            self.board_selection = game_settings["selected_board"]
         else:
             self.ai_opponent_enabled = AI_OPPONENT_DEFAULT_ENABLED
             self.engine.set_skill_level(AI_OPPONENT_DEFAULT_ELO)
-            self.piece_selection = DEFAULT_PIECE_SELECTION
+            self.piece_selection = DEFAULT_SELECTION
+            self.board_selection = DEFAULT_SELECTION
         
         # Menu settings.
         self.go_to_main_menu = False
@@ -40,7 +42,8 @@ class ChessGame:
         return {
             "ai_opponent_enabled": self.get_ai_opponent_enabled(),
             "ai_elo": self.get_ai_elo(),
-            "selected_piece": self.get_piece_selection()
+            "selected_piece": self.get_piece_selection(),
+            "selected board": self.get_board_selection()
         }
         
     # ~ Pawn Promotion
@@ -56,6 +59,13 @@ class ChessGame:
         
     def get_piece_selection(self):
         return self.piece_selection
+       
+    # ~ Board Selection
+    def set_board_selection(self, board_selection):
+        self.board_selection = board_selection
+        
+    def get_board_selection(self):
+        return self.board_selection
         
     # ~ Menu
     def set_go_to_main_menu(self, go_to_main_menu):

@@ -30,7 +30,7 @@ STORE_MENU_BACKGROUND_IMAGE = 'images/menu/1.png'
 PAUSE_MENU_BACKGROUND_IMAGE = 'images/menu/2.png'
 PROMOTE_PAWN_BACKGROUND_IMAGE = 'images/menu/promote_pawn.png'
 GAME_OVER_BACKGROUND_IMAGE = 'images/menu/game_over.png'
-DEFAULT_PIECE_SELECTION = 0 # 0 := classic, 1 := wood, 2 := metal
+DEFAULT_SELECTION = 0 # 0 := classic, 1 := wood, 2 := metal
 
 # ~ Pieces
 PIECES = ["pawn", "rook", "knight", "bishop", "queen", "king"]
@@ -41,7 +41,10 @@ PIECE_ABR_DICT.update({ v: k for k, v in PIECE_ABR_DICT.items() })
 # ~ Objects and textures
 MODEL_TEMPLATE = { "obj": None, "texture": None, "vao": None, "vbo": None, "model_matrix": None }
 CHESSBOARD_OBJECT_PATH = 'models/board/board.obj'
-CHESSBOARD_TEXTURE_PATH = 'models/board/board_wood.png'
+
+CLASSIC_CHESSBOARD_TEXTURE_PATH = 'models/board/board_black.png'
+WOOD_CHESSBOARD_TEXTURE_PATH = 'models/board/board_wood.png'
+RGB_CHESSBOARD_TEXTURE_PATH = 'models/board/board_rgb.png'
 
 SQUARE_OBJECT_PATH = 'models/square.obj'
 HIGHLIGHTED_SQUARE_TEXTURE_PATH = 'models/highlighted_square.png'
