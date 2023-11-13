@@ -11,6 +11,7 @@ from menu.menu_credits import open_credits_menu
 pygame.mixer.init()
 
 click_sound = pygame.mixer.Sound('./sounds/item_click.wav')
+game_start_sound = pygame.mixer.Sound('./sounds/game-start.mp3')
 
 def background_music():
     pygame.mixer.music.load('./sounds/menu.mp3')
@@ -41,7 +42,7 @@ def init_main_menu(surface, game):
     return main_menu
 
 def play_and_start_game(main_menu, game):
-    click_sound.play()
+    game_start_sound.play()
     start_the_game(main_menu, game)
 
 def play_and_open_settings(surface, game):

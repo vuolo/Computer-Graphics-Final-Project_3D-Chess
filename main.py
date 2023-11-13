@@ -21,6 +21,9 @@ def main(game_settings=None):
     # Reset the game after the main menu is closed.
     pygame.time.set_timer(RESET_GAME_EVENT, 1, 1)
     
+    notify_sound = pygame.mixer.Sound('sounds/notify.mp3')
+    game_over_sound = pygame.mixer.Sound('sounds/game-end.mp3')
+    
     # Main Loop.
     last_time = pygame.time.get_ticks()
     while True:
@@ -34,9 +37,11 @@ def main(game_settings=None):
             pause_game_and_continue(lambda: open_pause_menu(pygame.display.set_mode(WINDOW["display"]), game), game, gui)
             continue
         elif result == 'needs_pawn_promotion':
+            notify_sound.play()
             pause_game_and_continue(lambda: open_promote_pawn_menu(pygame.display.set_mode(WINDOW["display"]), game), game, gui)
             continue
         elif result == 'game_over':
+            game_over_sound.play()
             restart_game(game, display_menu_first_func=lambda: open_game_over_menu(pygame.display.set_mode(WINDOW["display"]), game))
             return
         elif result == 'play_bowling_animation':

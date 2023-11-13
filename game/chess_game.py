@@ -43,7 +43,7 @@ class ChessGame:
             "ai_opponent_enabled": self.get_ai_opponent_enabled(),
             "ai_elo": self.get_ai_elo(),
             "selected_piece": self.get_piece_selection(),
-            "selected board": self.get_board_selection()
+            "selected_board": self.get_board_selection()
         }
         
     # ~ Pawn Promotion

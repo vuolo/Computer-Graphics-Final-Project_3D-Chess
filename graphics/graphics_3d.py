@@ -23,6 +23,8 @@ from util.shaderLoaderV3 import ShaderProgram
 from util.guiV3 import SimpleGUI
 from util.gui_ext import prepare_gui, update_gui
 
+pygame.mixer.init()
+
 # Global variables.
 game: Optional['ChessGame'] = None
 gui: Optional['SimpleGUI'] = None
@@ -34,6 +36,7 @@ invalid_move_square_model: dict = MODEL_TEMPLATE.copy()
 pieces: dict = { color: { piece: MODEL_TEMPLATE.copy() for piece in PIECES } for color in PIECE_COLORS }
 skybox: dict = {}
 shaderProgram: Optional[ShaderProgram] = None
+invalid_move_sound = pygame.mixer.Sound('./sounds/invalid-move.mp3')
 
 # ~ Camera
 view_matrix: Optional[np.ndarray] = None
@@ -169,7 +172,9 @@ def draw_highlights(highlighted_square, selected_square, valid_move_squares, inv
     if valid_move_squares:
         for square in valid_move_squares:
             draw_at_board_position(valid_move_square_model, 7 - square[1], square[0])
-    if invalid_move_square: draw_at_board_position(invalid_move_square_model, 7 - invalid_move_square[1], invalid_move_square[0])
+    if invalid_move_square: 
+        invalid_move_sound.play()
+        draw_at_board_position(invalid_move_square_model, 7 - invalid_move_square[1], invalid_move_square[0])
     
 def setup_indicators():
     global indicator_squares
