@@ -2,19 +2,9 @@
 import pygame_menu
 
 # Local application imports.
+from menu.menu_store import change_selected_piece, change_selected_board
+from menu.menu_settings import change_elo, toggle_ai
 from menu.theme import menu_theme, draw_main_menu_background
-
-def change_elo(difficulty_name, elo, game):
-    # Change the Elo of the AI opponent.
-    if game.get_ai_elo() != elo:
-        game.set_ai_elo(elo)
-        print(f"Changed AI difficulty to {difficulty_name} (Elo: {elo}).")
-        
-def toggle_ai(enabled, game):
-    # Toggle the AI opponent on or off.
-    if game.get_ai_opponent_enabled() != enabled:
-        game.set_ai_opponent_enabled(enabled)
-        print(f"AI opponent {'enabled' if enabled else 'disabled'}.")
 
 def open_pause_menu(surface, game):
     pause_menu = pygame_menu.Menu(
@@ -28,6 +18,7 @@ def open_pause_menu(surface, game):
     ai_enabled = game.get_ai_opponent_enabled()
     
     # Add pause menu options.
+    pause_menu.add.label('[Quick \t Options]')
     pause_menu.add.selector(
         'Difficulty \t (Elo): \t ',
         [('Easy', 400), ('Medium', 900), ('Hard', 1750)],
@@ -39,6 +30,20 @@ def open_pause_menu(surface, game):
         toggleswitch_id='toggle_ai',
         default=ai_enabled,
         onchange=lambda enabled: toggle_ai(enabled, game)
+    )
+    pause_menu.add.label('')
+    pause_menu.add.label('[Quick \t Customization]')
+    pause_menu.add.selector(
+        'Board : \t ',
+        [('Wood', 0), ('Classic', 1), ('RGB', 2)],
+        default=game.get_board_selection(),
+        onchange=lambda value, _: change_selected_board(value[0], value[1], game)
+    )
+    pause_menu.add.selector(
+        'Piece : \t ',
+        [('Classic', 0), ('Wood', 1), ('Metal', 2)],
+        default=game.get_piece_selection(),
+        onchange=lambda value, _: change_selected_piece(value[0], value[1], game)
     )
     pause_menu.add.label('')
     pause_menu.add.button('Return To Game'.replace(" ", " \t "), pause_menu.disable)
