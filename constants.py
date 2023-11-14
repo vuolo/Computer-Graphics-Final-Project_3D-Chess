@@ -104,6 +104,9 @@ developers = [
     'Michael Vuolo'
 ]
 third_party_credits = """
-Third-Party Resources:
+[Third-Party Resources]:
 - skybox.blockadelabs.com
+- pyopengl.sourceforge.net
+- pygame.org
+- stockfishchess.org
 """

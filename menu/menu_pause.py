@@ -18,7 +18,7 @@ def open_pause_menu(surface, game):
     ai_enabled = game.get_ai_opponent_enabled()
     
     # Add pause menu options.
-    pause_menu.add.label('[Quick \t Options]')
+    pause_menu.add.label('[Quick \t Options]:')
     pause_menu.add.selector(
         'Difficulty \t (Elo): \t ',
         [('Easy', 400), ('Medium', 900), ('Hard', 1750)],
@@ -32,7 +32,7 @@ def open_pause_menu(surface, game):
         onchange=lambda enabled: toggle_ai(enabled, game)
     )
     pause_menu.add.label('')
-    pause_menu.add.label('[Quick \t Customization]')
+    pause_menu.add.label('[Quick \t Customization]:')
     pause_menu.add.selector(
         'Board : \t ',
         [('Wood', 0), ('Classic', 1), ('RGB', 2)],

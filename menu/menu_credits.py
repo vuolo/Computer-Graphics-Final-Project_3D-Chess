@@ -14,7 +14,7 @@ def open_credits_menu(surface, game):
     )
     
     # Add a scroll area to the menu for developers.
-    credits_menu.add.label('Developers', max_char=-1, align=pygame_menu.locals.ALIGN_CENTER)
+    credits_menu.add.label('[Developers]:', max_char=-1, align=pygame_menu.locals.ALIGN_CENTER)
     for developer in developers: credits_menu.add.label(developer.replace(" ", " \t "), max_char=-1, align=pygame_menu.locals.ALIGN_CENTER)
     credits_menu.add.label('')
     
@@ -24,6 +24,7 @@ def open_credits_menu(surface, game):
 
     # Add a button to return to the main menu.
     credits_menu.add.button('Return To Main Menu'.replace(" ", " \t "), credits_menu.disable)
+    credits_menu.add.label('')
     credits_menu.mainloop(surface, bgfun=lambda: draw_main_menu_background(surface, menu_type='credits'))
     
     return credits_menu
