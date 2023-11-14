@@ -22,6 +22,7 @@ from util.objLoaderV4 import ObjLoader
 from util.shaderLoaderV3 import ShaderProgram
 from util.guiV3 import SimpleGUI
 from util.gui_ext import prepare_gui, update_gui
+from graphics.graphics_shadows import render_shadow_map, setup_shadows
 
 pygame.mixer.init()
 
@@ -48,6 +49,10 @@ up = np.array([0, 1, 0]) # Make the camera's "up" direction the positive y-axis.
 near_plane = 0.1
 far_plane = 15
 fov = 45
+# Shadows
+lightPos = np.array([1, 1, 1])
+shadowTex_id = None
+shadowBuffer_id = None
 # (Mouse dragging - rotate around the board - uses yaw/pitch instead of angleX/angleY):
 is_dragging = False
 last_mouse_pos: Tuple[int, int] = (0, 0)
@@ -97,7 +102,7 @@ for key, nested_values in indicator_square_ext.items():
 
 # ~ Main
 def setup_3d_graphics(new_game, new_gui, is_resume=False):
-    global game, gui, shaderProgram, intro_animation_started
+    global game, gui, shaderProgram, intro_animation_started, shadowTex_id, shadowBuffer_id
     game = new_game
     gui = new_gui
     
@@ -131,6 +136,7 @@ def setup_3d_graphics(new_game, new_gui, is_resume=False):
     
     # Setup the 3D scene.
     setup_generic_shaderProgram()
+    shadowBuffer_id, shadowTex_id = setup_shadows()
     setup_chessboard()
     setup_pieces()
     setup_skybox()
@@ -145,7 +151,7 @@ def setup_3d_graphics(new_game, new_gui, is_resume=False):
 
 # ~ Graphics
 def draw_graphics(delta_time, highlighted_square, selected_square, valid_move_squares, invalid_move_square):
-    global game, gui, intro_animation_started
+    global game, gui, intro_animation_started, chessboard, pieces
     if not intro_animation_started: update_camera_animation(delta_time)
     
     # Prepare the 3D scene.
@@ -153,6 +159,7 @@ def draw_graphics(delta_time, highlighted_square, selected_square, valid_move_sq
 
     # Draw the 3D scene.
     update_graphics(delta_time)
+    render_shadow_map(game, chessboard, pieces)
     draw_chessboard()
     draw_highlights(highlighted_square, selected_square, valid_move_squares, invalid_move_square)
     # draw_indicators(game)
@@ -378,6 +385,8 @@ def setup_generic_shaderProgram():
     # Assign the texture units to the shader.
     shaderProgram["tex2D"] = 0
     shaderProgram["cubeMapTex"] = 1
+    shaderProgram["depthTex"] = 2
+
     
 def setup_hudShaderProgram():
     global hudShaderProgram
@@ -797,6 +806,7 @@ def draw_pieces():
                     draw_at_board_position(piece_model, row, col)
                 shaderProgram["isGlowing"] = False
 
+
 def draw_piece_at_position(piece_model, position):
     global view_matrix, projection_matrix, rotated_eye, shaderProgram
 
@@ -828,7 +838,7 @@ def draw_piece_at_position(piece_model, position):
     glDrawArrays(GL_TRIANGLES, 0, piece_model["obj"].n_vertices)
 
 def draw_at_board_position(model, row, col):
-    global view_matrix, projection_matrix, rotated_eye, shaderProgram
+    global view_matrix, projection_matrix, rotated_eye, shaderProgram, shadowTex_id
 
     # Calculate the piece's model matrix based on its position on the board.
     offset_x, offset_z, square_size = 0, 0, 1.575
@@ -839,6 +849,12 @@ def draw_at_board_position(model, row, col):
     ])
     translation_matrix = pyrr.matrix44.create_from_translation(position)
     model_matrix = pyrr.matrix44.multiply(translation_matrix, model["model_matrix"])
+
+    light_rotY_mat = pyrr.matrix44.create_from_y_rotation(np.deg2rad(0))
+    rotated_lightPos = pyrr.matrix44.apply_to_vector(light_rotY_mat, lightPos)
+
+    light_view_mat = pyrr.matrix44.create_look_at(rotated_lightPos, target, up)
+    light_projection_mat = pyrr.matrix44.create_perspective_projection_matrix(45, WINDOW["aspect_ratio"], near_plane, far_plane)
     
     # Apply additional rotation to the white pieces to face the center of the board.
     if 'color' in model and model['color'] == 'white':
@@ -850,6 +866,9 @@ def draw_at_board_position(model, row, col):
     shaderProgram["view_matrix"] = view_matrix
     shaderProgram["projection_matrix"] = projection_matrix
     shaderProgram["eye_pos"] = rotated_eye
+    shaderProgram["lightPos"] = lightPos
+    shaderProgram["light_projection_mat"] = light_projection_mat
+    shaderProgram["light_view_mat"] = light_view_mat
 
     # Bind the piece's texture.
     glActiveTexture(GL_TEXTURE0)
@@ -858,6 +877,10 @@ def draw_at_board_position(model, row, col):
     # Bind the skybox texture (for environment mapping).
     glActiveTexture(GL_TEXTURE1)
     glBindTexture(GL_TEXTURE_CUBE_MAP, skybox["texture_id"])
+
+    # Bind the shadow texture
+    glActiveTexture(GL_TEXTURE2)
+    glBindTexture(GL_TEXTURE_2D, shadowTex_id)
 
     # Draw the piece.
     glBindVertexArray(model["vao"])

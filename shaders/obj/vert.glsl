@@ -8,9 +8,14 @@ uniform mat4 model_matrix;
 uniform mat4 view_matrix;
 uniform mat4 projection_matrix;
 
+
+uniform mat4 light_projection_mat;
+uniform mat4 light_view_mat;
+
 out vec3 frag_pos;
 out vec3 fragNormal;
 out vec2 fragUV;
+out vec4 fragPosLightSpace;
 // out vec2 screen_pos;
 
 void main() {
@@ -19,7 +24,9 @@ void main() {
     frag_pos = world_pos.xyz;
 
     // Transform the position from world space to the clip coordinates
+    
     gl_Position = projection_matrix * view_matrix * world_pos;
+    fragPosLightSpace = light_projection_mat * light_view_mat * world_pos;
     // vec3 ndc = gl_Position.xyz / gl_Position.w;
     // screen_pos = ndc.xy * 0.5 + 0.5;
 
