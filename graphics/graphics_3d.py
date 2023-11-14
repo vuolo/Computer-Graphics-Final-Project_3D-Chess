@@ -38,6 +38,7 @@ pieces: dict = { color: { piece: MODEL_TEMPLATE.copy() for piece in PIECES } for
 skybox: dict = {}
 shaderProgram: Optional[ShaderProgram] = None
 invalid_move_sound = pygame.mixer.Sound('./sounds/invalid-move.mp3')
+invalid_move_sound.set_volume(0.25)
 
 # ~ Camera
 view_matrix: Optional[np.ndarray] = None
@@ -151,7 +152,7 @@ def setup_3d_graphics(new_game, new_gui, is_resume=False):
 
 # ~ Graphics
 def draw_graphics(delta_time, highlighted_square, selected_square, valid_move_squares, invalid_move_square):
-    global game, gui, intro_animation_started, chessboard, pieces
+    global game, gui, intro_animation_started, chessboard, pieces, piece_animations
     if not intro_animation_started: update_camera_animation(delta_time)
     
     # Prepare the 3D scene.
@@ -159,7 +160,7 @@ def draw_graphics(delta_time, highlighted_square, selected_square, valid_move_sq
 
     # Draw the 3D scene.
     update_graphics(delta_time)
-    render_shadow_map(game, chessboard, pieces)
+    render_shadow_map(game, chessboard, pieces, piece_animations)
     draw_chessboard()
     draw_highlights(highlighted_square, selected_square, valid_move_squares, invalid_move_square)
     # draw_indicators(game)
@@ -808,11 +809,16 @@ def draw_pieces():
 
 
 def draw_piece_at_position(piece_model, position):
-    global view_matrix, projection_matrix, rotated_eye, shaderProgram
+    global view_matrix, projection_matrix, rotated_eye, shaderProgram, shadowTex_id
 
     # Calculate the model matrix for the piece using the position.
     translation_matrix = pyrr.matrix44.create_from_translation(position)
     model_matrix = pyrr.matrix44.multiply(translation_matrix, piece_model["model_matrix"])
+    
+    light_rotY_mat = pyrr.matrix44.create_from_y_rotation(np.deg2rad(0))
+    rotated_lightPos = pyrr.matrix44.apply_to_vector(light_rotY_mat, lightPos)
+    light_view_mat = pyrr.matrix44.create_look_at(rotated_lightPos, target, up)
+    light_projection_mat = pyrr.matrix44.create_perspective_projection_matrix(45, WINDOW["aspect_ratio"], near_plane, far_plane)
     
     # Apply additional rotation to the white pieces to face the center of the board.
     if piece_model['color'] == 'white':
@@ -824,6 +830,9 @@ def draw_piece_at_position(piece_model, position):
     shaderProgram["view_matrix"] = view_matrix
     shaderProgram["projection_matrix"] = projection_matrix
     shaderProgram["eye_pos"] = rotated_eye
+    shaderProgram["lightPos"] = lightPos
+    shaderProgram["light_projection_mat"] = light_projection_mat
+    shaderProgram["light_view_mat"] = light_view_mat
 
     # Bind the piece's texture.
     glActiveTexture(GL_TEXTURE0)
@@ -832,6 +841,10 @@ def draw_piece_at_position(piece_model, position):
     # Bind the skybox texture (for environment mapping).
     glActiveTexture(GL_TEXTURE1)
     glBindTexture(GL_TEXTURE_CUBE_MAP, skybox["texture_id"])
+    
+    # Bind the shadow texture
+    glActiveTexture(GL_TEXTURE2)
+    glBindTexture(GL_TEXTURE_2D, shadowTex_id)
 
     # Draw the piece.
     glBindVertexArray(piece_model["vao"])

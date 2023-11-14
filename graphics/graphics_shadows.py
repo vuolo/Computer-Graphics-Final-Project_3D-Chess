@@ -50,7 +50,7 @@ def create_framebuffer_with_depth_attachment():
     glBindFramebuffer(GL_FRAMEBUFFER, 0)
     return shadow_buffer_id, shadowDepthTex
 
-def render_shadow_map(game: ChessGame, chessboard: dict, pieces: dict):
+def render_shadow_map(game: ChessGame, chessboard: dict, pieces: dict, piece_animations: dict):
     glBindFramebuffer(GL_FRAMEBUFFER, shadow_buffer_id)
     glClear(GL_DEPTH_BUFFER_BIT)
 
@@ -58,11 +58,11 @@ def render_shadow_map(game: ChessGame, chessboard: dict, pieces: dict):
     glUseProgram(shadowShaderProgram.shader)
 
     # Draw each object that will cast shadows
-    draw_objects(game, chessboard, pieces)
+    draw_objects(game, chessboard, pieces, piece_animations)
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0)
 
-def draw_objects(game: ChessGame, chessboard: dict, pieces: dict):
+def draw_objects(game: ChessGame, chessboard: dict, pieces: dict, piece_animations: dict):
     
     # glBindFramebuffer(GL_FRAMEBUFFER, shadow_buffer_id)
     board_array = game.get_2d_board_array()
@@ -88,17 +88,24 @@ def draw_objects(game: ChessGame, chessboard: dict, pieces: dict):
                 piece_type = PIECE_ABR_DICT[piece.value.lower()]
                 piece_model = pieces[color][piece_type]
                 piece_model['color'] = color
+                
+                # Determine the square name (e.g., 'e2')
+                square_name = chr(col + ord('a')) + str(8 - row)
 
                 # Check if there's an active animation for the piece on this square.
-                # Calculate the piece's model matrix based on its position on the board.
-                offset_x, offset_z, square_size = 0, 0, 1.575
-                position = np.array([
-                    (col - 3.5) * square_size + offset_x, 
-                    0, 
-                    (row - 3.5) * square_size + offset_z
-                ])
-                translation_matrix = pyrr.matrix44.create_from_translation(position)
-                model_matrix = pyrr.matrix44.multiply(translation_matrix, piece_model["model_matrix"])
+                if square_name in piece_animations and piece_animations[square_name]["is_active"]:
+                    animation = piece_animations[square_name]
+                    translation_matrix = pyrr.matrix44.create_from_translation(animation["current_position"])
+                    model_matrix = pyrr.matrix44.multiply(translation_matrix, piece_model["model_matrix"])
+                else: # Calculate the piece's model matrix based on its position on the board.
+                    offset_x, offset_z, square_size = 0, 0, 1.575
+                    position = np.array([
+                        (col - 3.5) * square_size + offset_x, 
+                        0, 
+                        (row - 3.5) * square_size + offset_z
+                    ])
+                    translation_matrix = pyrr.matrix44.create_from_translation(position)
+                    model_matrix = pyrr.matrix44.multiply(translation_matrix, piece_model["model_matrix"])
                     
                 # Apply additional rotation to the white pieces to face the center of the board.
                 if 'color' in piece_model and piece_model['color'] == 'white':
