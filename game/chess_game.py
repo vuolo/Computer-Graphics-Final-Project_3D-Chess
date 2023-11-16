@@ -26,12 +26,14 @@ class ChessGame:
             self.piece_selection = game_settings["selected_piece"]
             self.board_selection = game_settings["selected_board"]
             self.ambience_selection = game_settings["selected_ambience"]
+            self.skybox_selection = game_settings["selected_skybox"]
         else:
             self.ai_opponent_enabled = AI_OPPONENT_DEFAULT_ENABLED
             self.engine.set_skill_level(AI_OPPONENT_DEFAULT_ELO)
             self.piece_selection = DEFAULT_SELECTION
             self.board_selection = DEFAULT_SELECTION
             self.ambience_selection = DEFAULT_SELECTION
+            self.skybox_selection = DEFAULT_SELECTION
         
         # Menu settings.
         self.go_to_main_menu = False
@@ -46,7 +48,8 @@ class ChessGame:
             "ai_elo": self.get_ai_elo(),
             "selected_piece": self.get_piece_selection(),
             "selected_board": self.get_board_selection(),
-            "selected_ambience": self.get_ambience_selection()
+            "selected_ambience": self.get_ambience_selection(),
+            "selected_skybox": self.get_skybox_selection()
         }
         
     # ~ Pawn Promotion
@@ -76,6 +79,13 @@ class ChessGame:
         
     def get_board_selection(self):
         return self.board_selection
+    
+    # ~ Skybox Selection
+    def set_skybox_selection(self, skybox_selection):
+        self.skybox_selection = skybox_selection
+        
+    def get_skybox_selection(self):
+        return self.skybox_selection
         
     # ~ Menu
     def set_go_to_main_menu(self, go_to_main_menu):

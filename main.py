@@ -15,11 +15,12 @@ pygame.mixer.init()
 
 def main(game_settings=None):
 
+    # Setup.
     game, gui = gameplay_setup(game_settings)
     if "-nomenu" not in sys.argv and not SKIP_MAIN_MENU:
         init_main_menu(pygame.display.set_mode(WINDOW["display"]), game)
     
-    # Setup.
+    # Ambient music setup.
     if(game.ambience_selection == 0):
         pygame.mixer.music.load('sounds/chill.mp3')
         pygame.mixer.music.set_volume(0.2)  

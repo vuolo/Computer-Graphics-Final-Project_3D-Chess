@@ -144,7 +144,7 @@ def setup_3d_graphics(new_game, new_gui, is_resume=False):
     shadowBuffer_id, shadowTex_id = setup_shadows()
     setup_chessboard()
     setup_pieces()
-    setup_skybox()
+    setup_skybox(game)
     setup_highlights()
     setup_indicators()
     
@@ -915,14 +915,22 @@ def draw_at_board_position(model, row, col):
     glDrawArrays(GL_TRIANGLES, 0, model["obj"].n_vertices)
            
 # ~ Skybox
-def setup_skybox():
+def setup_skybox(game):
     # Load the skybox shader and texture.
-    global skybox
+    global skybox, skybox_path
+
+    if(game.skybox_selection == 0):
+        skybox_path = SKYBOX_PATH
+    elif(game.skybox_selection == 1):
+        skybox_path = SKYBOX_PATH
+    elif(game.skybox_selection == 2):
+        skybox_path = SKYBOX_PATH
+    
     skybox = {
         "shaderProgram": ShaderProgram("shaders/skybox/vert.glsl", "shaders/skybox/frag.glsl"),
-        "texture_id": load_cubemap_textures([f"{SKYBOX_PATH}/right.png", f"{SKYBOX_PATH}/left.png",
-                                    f"{SKYBOX_PATH}/top.png", f"{SKYBOX_PATH}/bottom.png",
-                                    f"{SKYBOX_PATH}/front.png", f"{SKYBOX_PATH}/back.png"]),
+        "texture_id": load_cubemap_textures([f"{skybox_path}/right.png", f"{skybox_path}/left.png",
+                                    f"{skybox_path}/top.png", f"{skybox_path}/bottom.png",
+                                    f"{skybox_path}/front.png", f"{skybox_path}/back.png"]),
         "vertices": np.array([-1, -1,
                                1, -1,
                                1,  1,

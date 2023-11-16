@@ -11,8 +11,11 @@ def change_selected_piece(selected_piece_name, selected_piece_index, game):
 def change_selected_board(selected_board_name, selected_board_index, game):
     game.set_board_selection(selected_board_index)
 
-def change_selected_ambience(selected_board_name, selected_board_index, game):
-    game.set_ambience_selection(selected_board_index)
+def change_selected_ambience(selected_ambience_name, selected_ambience_index, game):
+    game.set_ambience_selection(selected_ambience_index)
+
+def change_selected_skybox(selected_skybox_name, selected_skybox_index, game):
+    game.set_skybox_selection(selected_skybox_index)
 
 def open_store_menu(surface, game):
     store_menu = pygame_menu.Menu(
@@ -20,6 +23,13 @@ def open_store_menu(surface, game):
         width=surface.get_width(),
         height=surface.get_height(),
         theme=menu_theme
+    )
+
+    store_menu.add.selector(
+        'Environment : \t ',
+        [('Galaxy', 0), ('TODO 1', 1), ('TODO 2', 2)],
+        default=game.get_skybox_selection(),
+        onchange=lambda value, _: change_selected_skybox(value[0], value[1], game)
     )
 
     store_menu.add.selector(
