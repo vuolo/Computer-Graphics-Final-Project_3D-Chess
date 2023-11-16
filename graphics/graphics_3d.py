@@ -10,6 +10,7 @@ import pyrr
 import numpy as np
 import chess
 import platform
+import time
 
 # Local application imports.
 from graphics.graphics_2d import setup_2d_graphics
@@ -39,6 +40,9 @@ skybox: dict = {}
 shaderProgram: Optional[ShaderProgram] = None
 invalid_move_sound = pygame.mixer.Sound('./sounds/invalid-move.mp3')
 invalid_move_sound.set_volume(0.25)
+check_move_sound = pygame.mixer.Sound('./sounds/move-check.mp3')
+check_move_sound_played = False
+
 
 # ~ Camera
 view_matrix: Optional[np.ndarray] = None
@@ -760,12 +764,13 @@ def draw_pieces():
     #     • BLACK_QUEEN = "q"
     #     • WHITE_KING = "K"
     #     • BLACK_KING = "k"
-    global pieces, game, shaderProgram, piece_animations
+    global pieces, game, shaderProgram, piece_animations, check_move_sound_played
     board_array = game.get_2d_board_array()
 
     # Activate the shader program.
     glUseProgram(shaderProgram.shader)
     
+
     # Iterate over the 8x8 chessboard grid, starting from the bottom-right corner (a1).
     for row in range(7, -1, -1):  # 7 corresponds to '1' in chess notation, and 0 corresponds to '8'
         for col in range(8):  # 0 corresponds to 'a' in chess notation, and 7 corresponds to 'h'
@@ -783,16 +788,26 @@ def draw_pieces():
                     is_in_check = game.board.is_check()
                     if is_white_turn and color == 'white':
                         if is_in_check:
-                            shaderProgram["glowColor"] = CHECK_TURN_GLOW_COLOR
+                            if not check_move_sound_played:
+                                check_move_sound.play()
+                                check_move_sound_played = True
+                                print('White in check sound')
                         else:
-                            shaderProgram["glowColor"] = WHITE_TURN_GLOW_COLOR
+                               check_move_sound_played = False
+
+                        shaderProgram["glowColor"] = CHECK_TURN_GLOW_COLOR if is_in_check else WHITE_TURN_GLOW_COLOR
                         shaderProgram["isGlowing"] = True
                         shaderProgram["time"] = pygame.time.get_ticks() / 1000.0
                     elif not is_white_turn and color == 'black':
                         if is_in_check:
-                            shaderProgram["glowColor"] = CHECK_TURN_GLOW_COLOR
+                            if not check_move_sound_played:
+                                check_move_sound.play()
+                                check_move_sound_played = True
+                                print('Black in check sound')
                         else:
-                            shaderProgram["glowColor"] = BLACK_TURN_GLOW_COLOR
+                            check_move_sound_played = False
+                            
+                        shaderProgram["glowColor"] = CHECK_TURN_GLOW_COLOR if is_in_check else BLACK_TURN_GLOW_COLOR
                         shaderProgram["isGlowing"] = True
                         shaderProgram["time"] = pygame.time.get_ticks() / 1000.0
 
