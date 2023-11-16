@@ -793,7 +793,7 @@ def draw_pieces():
                                 check_move_sound_played = True
                                 print('White in check sound')
                         else:
-                               check_move_sound_played = False
+                            check_move_sound_played = False
 
                         shaderProgram["glowColor"] = CHECK_TURN_GLOW_COLOR if is_in_check else WHITE_TURN_GLOW_COLOR
                         shaderProgram["isGlowing"] = True
@@ -806,7 +806,7 @@ def draw_pieces():
                                 print('Black in check sound')
                         else:
                             check_move_sound_played = False
-                            
+
                         shaderProgram["glowColor"] = CHECK_TURN_GLOW_COLOR if is_in_check else BLACK_TURN_GLOW_COLOR
                         shaderProgram["isGlowing"] = True
                         shaderProgram["time"] = pygame.time.get_ticks() / 1000.0

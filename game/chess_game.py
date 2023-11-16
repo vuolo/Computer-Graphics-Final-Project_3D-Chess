@@ -25,11 +25,13 @@ class ChessGame:
             self.engine.set_skill_level(game_settings["ai_elo"])
             self.piece_selection = game_settings["selected_piece"]
             self.board_selection = game_settings["selected_board"]
+            self.ambience_selection = game_settings["selected_ambience"]
         else:
             self.ai_opponent_enabled = AI_OPPONENT_DEFAULT_ENABLED
             self.engine.set_skill_level(AI_OPPONENT_DEFAULT_ELO)
             self.piece_selection = DEFAULT_SELECTION
             self.board_selection = DEFAULT_SELECTION
+            self.ambience_selection = DEFAULT_SELECTION
         
         # Menu settings.
         self.go_to_main_menu = False
@@ -43,7 +45,8 @@ class ChessGame:
             "ai_opponent_enabled": self.get_ai_opponent_enabled(),
             "ai_elo": self.get_ai_elo(),
             "selected_piece": self.get_piece_selection(),
-            "selected_board": self.get_board_selection()
+            "selected_board": self.get_board_selection(),
+            "selected_ambience": self.get_ambience_selection()
         }
         
     # ~ Pawn Promotion
@@ -52,6 +55,13 @@ class ChessGame:
         
     def get_pawn_promotion_selection(self):
         return self.pawn_promotion_selection
+    
+    # ~ Ambience Selection
+    def set_ambience_selection(self, ambience_selection):
+        self.ambience_selection = ambience_selection
+        
+    def get_ambience_selection(self):
+        return self.ambience_selection
     
     # ~ Piece Selection
     def set_piece_selection(self, piece_selection):

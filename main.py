@@ -11,11 +11,28 @@ from menu.menu_promote_pawn import open_promote_pawn_menu
 from menu.menu_game_over import open_game_over_menu
 from graphics.graphics_3d import setup_3d_graphics, draw_graphics, cleanup_graphics
 
+pygame.mixer.init()
+
 def main(game_settings=None):
-    # Setup.
+
     game, gui = gameplay_setup(game_settings)
     if "-nomenu" not in sys.argv and not SKIP_MAIN_MENU:
         init_main_menu(pygame.display.set_mode(WINDOW["display"]), game)
+    
+    # Setup.
+    if(game.ambience_selection == 0):
+        pygame.mixer.music.load('sounds/chill.mp3')
+        pygame.mixer.music.set_volume(0.2)  
+        pygame.mixer.music.play(-1)  
+    elif(game.ambience_selection == 1):
+        pygame.mixer.music.load('sounds/orchestra.mp3')
+        pygame.mixer.music.set_volume(0.1) 
+        pygame.mixer.music.play(-1)  
+    elif(game.ambience_selection == 2):
+        pygame.mixer.music.load('sounds/beats.mp3')
+        pygame.mixer.music.set_volume(0.2)
+        pygame.mixer.music.play(-1)
+
     setup_3d_graphics(game, gui)
     
     # Reset the game after the main menu is closed.
