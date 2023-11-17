@@ -29,6 +29,7 @@ last_highlighted_black: Tuple[int, int] = notation_to_coords('e7')
 is_selected: bool = False  # State to track if a square is selected
 end_move_sound = pygame.mixer.Sound('./sounds/end_move.mp3')
 start_move_sound = pygame.mixer.Sound('./sounds/start_move.mp3')
+capture_sound = pygame.mixer.Sound('./sounds/capture.mp3')
 side_to_rotate_to = None
 invalid_move_square = None
 
@@ -187,8 +188,9 @@ def process_move(target_square: Tuple[int, int], pawn_promotion_selection=None):
 
         # Capture the piece object before making the move
         piece = game.board.piece_at(chess.parse_square(from_square_name))
+        piece_after = game.board.piece_at(chess.parse_square(to_square_name))
         piece_symbol = piece.symbol() if piece else None
-
+       
         result = game.make_move(move)
         if result == 'needs_pawn_promotion': return result
         elif result == True:
@@ -196,6 +198,9 @@ def process_move(target_square: Tuple[int, int], pawn_promotion_selection=None):
             start_time = pygame.time.get_ticks() / 1000.0
             create_piece_animation(from_square_name, to_square_name, piece_symbol, start_time, PIECE_ANIMATION_DURATION)
             post_successful_move_processing(move, target_square)
+            if piece and piece_after and piece.color != piece_after.color:
+                capture_sound.play()
+
         elif result == False:
             print(f"Invalid move: {move}")
             set_invalid_move_square(target_square)
