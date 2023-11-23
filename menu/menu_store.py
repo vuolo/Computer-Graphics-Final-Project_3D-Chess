@@ -27,7 +27,7 @@ def open_store_menu(surface, game):
 
     store_menu.add.selector(
         'Environment : \t ',
-        [('Galaxy', 0), ('TODO 1', 1), ('TODO 2', 2)],
+        [('Galaxy', 0), ('Dinner \t in \t space', 1), ('Fantasy \t Land \t (1)', 2), ('Fantasy \t Land \t (2)', 2)],
         default=game.get_skybox_selection(),
         onchange=lambda value, _: change_selected_skybox(value[0], value[1], game)
     )
@@ -48,7 +48,7 @@ def open_store_menu(surface, game):
 
     store_menu.add.selector(
         'Game Ambience : \t ',
-        [('Chill', 0), ('Orchestra', 1), ('Beats', 2), ('Off', 3)],
+        [('Chill', 0), ('Orchestral', 1), ('Beats', 2), ('Off', 3)],
         default=game.get_ambience_selection(),
         onchange=lambda value, _: change_selected_ambience(value[0], value[1], game)
     )

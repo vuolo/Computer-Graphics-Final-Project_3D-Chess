@@ -57,7 +57,7 @@ CLASSIC_PIECE_TEXTURE_PATHS = { color: { piece: f'models/pieces/classic/{piece}/
 WOOD_PIECE_TEXTURE_PATHS = { color: { piece: f'models/pieces/wood/{piece}/{color}.png' for piece in PIECES } for color in PIECE_COLORS }
 METAL_PIECE_TEXTURE_PATHS = { color: { piece: f'models/pieces/metal/{piece}/{color}.png' for piece in PIECES } for color in PIECE_COLORS }
 
-SKYBOX_PATH = 'skybox/set_in_space'
+SKYBOX_PATHS = ['skybox/set_in_space', 'skybox/space_with_blackholes', 'skybox/insane_chess_fantasy_land1', 'skybox/insane_chess_fantasy_land2']
 
 # ~ Camera
 CAMERA_MOUSE_DRAG_SENSITIVITY = 0.1

@@ -2,7 +2,7 @@
 import pygame_menu
 
 # Local application imports.
-from menu.menu_store import change_selected_piece, change_selected_board
+from menu.menu_store import change_selected_piece, change_selected_board, change_selected_skybox #, change_selected_ambience
 from menu.menu_settings import change_elo, toggle_ai
 from menu.theme import menu_theme, draw_main_menu_background
 
@@ -44,6 +44,12 @@ def open_pause_menu(surface, game):
         [('Classic', 0), ('Wood', 1), ('Metal', 2)],
         default=game.get_piece_selection(),
         onchange=lambda value, _: change_selected_piece(value[0], value[1], game)
+    )
+    pause_menu.add.selector(
+        'Environment : \t ',
+        [('Galaxy', 0), ('Dinner \t in \t space', 1), ('Fantasy \t Land \t (1)', 2), ('Fantasy \t Land \t (2)', 2)],
+        default=game.get_skybox_selection(),
+        onchange=lambda value, _: change_selected_skybox(value[0], value[1], game)
     )
     pause_menu.add.label('')
     pause_menu.add.button('Return To Game'.replace(" ", " \t "), pause_menu.disable)
