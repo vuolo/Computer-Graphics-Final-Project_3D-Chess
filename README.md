@@ -1,7 +1,7 @@
 <div align="center">
   <br>
   <a href="https://github.com/vuolo/Computer-Graphics-Final-Project_3D-Chess">
-    <img src="public/images/brand/chess-icon.png" alt="Logo" width="80" height="80">
+    <img src="https://github.com/vuolo/Computer-Graphics-Final-Project_3D-Chess/blob/main/images/brand/chess-icon.png?raw=true" alt="Logo" width="80" height="80">
   </a>
 
   <h3 align="center">3D Chess Game</h3>
@@ -20,7 +20,7 @@
 </ul>
 
 <h2>About The Project</h2>
-<img src="public/images/screenshots/project-screenshot.png" alt="Project Screenshot">
+<img src="https://github.com/vuolo/Computer-Graphics-Final-Project_3D-Chess/blob/main/images/screenshots/project-screenshot.png?raw=true" alt="Project Screenshot">
 
 In this 3D Chess game project, we've revamped the traditional chess experience using OpenGL in pygame, offering players an immersive experience with enhanced graphics, customizable boards, and game pieces. The game stands out with its realistic physics, including fluid movement animations, soft shadows, and reflections, and is further enriched by integrating the Stockfish chess engine for a challenging AI-driven gameplay.
 
