@@ -7,6 +7,8 @@
   <h3 align="center">3D Chess Game</h3>
 
   <p align="center">
+    <a href="https://drive.google.com/file/d/1cqlBkAGa6Pey-1qws2qGNJ6KT6IQ2euW/view" target="_blank"><img src="path-to-your-pdf-icon.png" alt="" />[Project Report]</a>
+    <br/><br/>
     Final Project for Computer Graphics (CAP 4720)
   </p>
 </div>
